@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>国際送料見積もりツール</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1a365d;
+            --primary-light: #2c5282;
+            --accent: #ed8936;
+            --accent-hover: #dd6b20;
+            --bg: #f7fafc;
+            --card-bg: #ffffff;
+            --text: #2d3748;
+            --text-light: #718096;
+            --border: #e2e8f0;
+            --success: #38a169;
+            --error: #e53e3e;
+            --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            padding: 1.5rem 2rem;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .site-title { font-size: 1.5rem; font-weight: 700; }
+        .site-subtitle { font-size: 0.875rem; opacity: 0.85; margin-top: 0.25rem; }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+
+        .calculator-section {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 900px) {
+            .calculator-section { grid-template-columns: 1fr; }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            padding: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 1.25rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-title svg { width: 20px; height: 20px; }
+
+        .form-group { margin-bottom: 1.25rem; }
+        .form-label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1.5px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(26, 54, 93, 0.1);
+        }
+
+        .country-search-wrapper { position: relative; }
+
+        .country-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1.5px solid var(--border);
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 100;
+            display: none;
+        }
+
+        .country-dropdown.active { display: block; }
+        .country-option { padding: 0.75rem 1rem; cursor: pointer; }
+        .country-option:hover { background: var(--bg); }
+
+        .size-inputs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
+        .size-group { position: relative; }
+        .size-group .form-input { padding-right: 2.5rem; }
+        .size-unit {
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-light);
+            font-size: 0.875rem;
+        }
+
+        .calculate-btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .calculate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(237, 137, 54, 0.4);
+        }
+
+        .weight-info {
+            background: var(--bg);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+            font-size: 0.875rem;
+            display: none;
+        }
+
+        .weight-info-row { display: flex; justify-content: space-between; padding: 0.25rem 0; }
+        .weight-info-row.highlight {
+            font-weight: 600;
+            color: var(--primary);
+            border-top: 1px dashed var(--border);
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+        }
+
+        .results-section {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+        }
+
+        .results-section.visible { opacity: 1; transform: translateY(0); }
+        .results-grid { display: grid; gap: 1rem; }
+
+        .result-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.25rem;
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: var(--shadow);
+            transition: all 0.2s;
+            border-left: 4px solid var(--border);
+        }
+
+        .result-card:hover { transform: translateX(4px); box-shadow: var(--shadow-lg); }
+        .result-card.fedex { border-left-color: #4d148c; }
+        .result-card.dhl { border-left-color: #d40511; }
+        .result-card.ups { border-left-color: #351c15; }
+        .result-card.ems { border-left-color: #003399; }
+
+        .carrier-logo {
+            width: 60px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.75rem;
+            border-radius: 6px;
+            color: white;
+        }
+
+        .result-info h3 { font-size: 1rem; font-weight: 600; }
+        .result-info p { font-size: 0.8rem; color: var(--text-light); margin-top: 0.25rem; }
+        .result-price { text-align: right; }
+        .price-value { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
+        .price-unit { font-size: 0.875rem; color: var(--text-light); }
+        .no-service { color: var(--text-light); font-size: 0.9rem; }
+
+        .notes-section {
+            margin-top: 2rem;
+            padding: 1rem 1.5rem;
+            background: linear-gradient(135deg, rgba(26, 54, 93, 0.05) 0%, rgba(44, 82, 130, 0.05) 100%);
+            border-radius: 8px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .notes-title { font-size: 0.875rem; font-weight: 600; color: var(--primary); margin-bottom: 0.5rem; }
+        .notes-content { font-size: 0.8rem; color: var(--text-light); line-height: 1.7; }
+
+        .footer { text-align: center; padding: 2rem; color: var(--text-light); font-size: 0.8rem; }
+
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--text);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: var(--shadow-lg);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 2000;
+        }
+
+        .toast.visible { transform: translateY(0); opacity: 1; }
+        .toast.success { background: var(--success); }
+        .toast.error { background: var(--error); }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s ease-in-out infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @media (max-width: 600px) {
+            .container { padding: 1rem; }
+            .header { padding: 1rem; }
+            .site-title { font-size: 1.2rem; }
+            .size-inputs { grid-template-columns: 1fr; }
+            .result-card { grid-template-columns: 1fr; text-align: center; }
+            .carrier-logo { margin: 0 auto; }
+            .result-price { text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <h1 class="site-title" id="siteTitle">国際送料見積もりツール</h1>
+            <p class="site-subtitle" id="siteSubtitle">複数キャリアの運賃を一括比較</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="calculator-section">
+            <div class="card">
+                <h2 class="card-title">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                    配送情報入力
+                </h2>
+
+                <div class="form-group">
+                    <label class="form-label">仕向国</label>
+                    <div class="country-search-wrapper">
+                        <input type="text" class="form-input" id="countryInput" placeholder="国名を入力して検索..." autocomplete="off">
+                        <div class="country-dropdown" id="countryDropdown"></div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">重量</label>
+                    <div class="size-group">
+                        <input type="number" class="form-input" id="weightInput" placeholder="0.0" step="0.1" min="0">
+                        <span class="size-unit">kg</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">サイズ（梱包後）</label>
+                    <div class="size-inputs">
+                        <div class="size-group">
+                            <input type="number" class="form-input" id="lengthInput" placeholder="縦" min="0">
+                            <span class="size-unit">cm</span>
+                        </div>
+                        <div class="size-group">
+                            <input type="number" class="form-input" id="widthInput" placeholder="横" min="0">
+                            <span class="size-unit">cm</span>
+                        </div>
+                        <div class="size-group">
+                            <input type="number" class="form-input" id="heightInput" placeholder="高さ" min="0">
+                            <span class="size-unit">cm</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="calculate-btn" id="calculateBtn">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                    </svg>
+                    送料を計算する
+                </button>
+
+                <div class="weight-info" id="weightInfo">
+                    <div class="weight-info-row">
+                        <span>実重量</span>
+                        <span id="actualWeight">0.0 kg</span>
+                    </div>
+                    <div class="weight-info-row">
+                        <span>容積重量</span>
+                        <span id="volumeWeight">0.0 kg</span>
+                    </div>
+                    <div class="weight-info-row highlight">
+                        <span>適用重量</span>
+                        <span id="appliedWeight">0.0 kg</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                    見積もり結果
+                </h2>
+
+                <div class="results-section" id="resultsSection">
+                    <div class="results-grid" id="resultsGrid"></div>
+                </div>
+
+                <div id="noResults" style="text-align: center; padding: 3rem 1rem; color: var(--text-light);">
+                    <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin: 0 auto 1rem; opacity: 0.5;">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                    </svg>
+                    <p>配送情報を入力して<br>「送料を計算する」をクリックしてください</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="notes-section">
+            <h3 class="notes-title">ご注意事項</h3>
+            <div class="notes-content" id="notesContent"></div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p id="footerText"></p>
+    </footer>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="./js/app.js"></script>
+</body>
+</html>

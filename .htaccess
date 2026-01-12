@@ -1,0 +1,18 @@
+# DBディレクトリへの直接アクセスを禁止
+<FilesMatch "\.(csv|bak)$">
+    Require all denied
+</FilesMatch>
+
+# config.phpへの直接アクセスを禁止
+<Files "config.php">
+    Require all denied
+</Files>
+
+# ディレクトリ一覧表示を無効化
+Options -Indexes
+
+# 文字エンコーディング
+AddDefaultCharset UTF-8
+
+# PHPエラー表示を無効化（本番環境用）
+php_flag display_errors Off

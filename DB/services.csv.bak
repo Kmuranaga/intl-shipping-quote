@@ -1,0 +1,6 @@
+id,name,color,description
+fedex_ficp,FedEx FICP,#4d148c,FedEx International Connect Plus
+fedex_ip,FedEx IP,#ff6600,FedEx International Priority
+dhl,DHL,#d40511,DHL Express Worldwide
+ups,UPS,#351c15,UPS Worldwide Express
+ems,EMS,#003399,国際スピード郵便

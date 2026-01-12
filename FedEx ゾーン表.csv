@@ -1,0 +1,230 @@
+国名（英字）,国名（日本語）,国コード,ゾーン
+Afghanistan,アフガニスタン,AF,J
+Albania,アルバニア,AL,I
+Algeria,アルジェリア,DZ,J
+American Samoa,米領サモア,AS,D
+Andorra,アンドラ,AD,I
+Angola,アンゴラ,AO,J
+Anguilla,アンギラ,AI,G
+Antigua,アンティグア,AG,G
+Argentina,アルゼンチン,AR,G
+Armenia,アルメニア,AM,I
+Aruba,アルバ,AW,G
+Australia,オーストラリア,AU,U
+Austria,オーストリア,AT,H
+Azerbaijan,アゼルバイジャン,AZ,I
+Bahamas,バハマ諸島,BS,G
+Bahrain,バーレーン,BH,J
+Bangladesh,バングラデシュ,BD,J
+Barbados,バルバドス,BB,G
+Barbuda,バーブーダ,,G
+Belarus,ベラルーシ,BY,I
+Belgium,ベルギー,BE,M
+Belize,ベリーズ,BZ,G
+Benin,ベナン,BJ,J
+Bermuda,バミューダ諸島,BM,G
+Bhutan,ブータン,BT,J
+Bolivia,ボリビア,BO,G
+Bonaire,ボネール,BQ,G
+Bosnia-Herzegovina,ボスニア・ヘルツェゴビナ,,I
+Botswana,ボツワナ,BW,J
+Brazil,ブラジル,BR,G
+British Virgin Islands,（英領バージン諸島）,,G
+Brunei,ブルネイ,BN,D
+Bulgaria,ブルガリア,BG,I
+Burkina Faso,ブルキナファソ,BF,J
+Burundi,ブルンジ,BI,J
+Cambodia,カンボジア,KH,D
+Cameroon,カメルーン,CM,J
+Canada,カナダ,CA,F
+Canary Islands,カナリア諸島,,M
+Cape Verde,カーボベルデ,CV,J
+Cayman Islands,ケイマン諸島,KY,G
+Chad,チャド,TD,J
+Channel Islands,英領チャネル諸島,,M
+Chile,チリ,CL,G
+China,,CN,W
+Colombia,コロンビア,CO,G
+Congo,コンゴ共和国,CG,J
+"Congo, Dem Rep Of",コンゴ民主共和国,,J
+Cook Islands,クック諸島,CK,D
+Costa Rica,コスタリカ,CR,G
+Croatia,クロアチア,HR,I
+Curacao,キュラソー,CW,G
+Cyprus,キプロス,CY,J
+Czech Republic,チェコ,CZ,H
+Denmark,デンマーク,DK,H
+Djibouti,ジブチ,DJ,J
+Dominica,ドミニカ国,DM,G
+Dominican Republic,ドミニカ共和国,DO,G
+East Timor,東ティモール,TL,D
+Ecuador,エクアドル,EC,G
+Egypt,エジプト,EG,J
+El Salvador,エルサルバドル,SV,G
+Eritrea,エリトリア,ER,J
+Estonia,エストニア,EE,I
+Ethiopia,エチオピア,ET,J
+Faeroe Islands,フェロー諸島,FO,H
+Fiji,フィジー,FJ,D
+Finland,フィンランド,FI,H
+France,フランス,FR,M
+French Guiana,仏領ギアナ,GF,G
+French Polynesia,仏領ポリネシア,PF,D
+Gabon,ガボン,GA,J
+Gambia,ガンビア,GM,J
+Georgia,グルジア,GE,I
+Germany,ドイツ,DE,M
+Ghana,ガーナ,GH,J
+Gibraltar,ジブラルタル,GI,I
+Grand Cayman,ケイマン諸島,,G
+Great Thatch Island,レート･サッチ島（英領バージン諸島）,,G
+Great Tobago Islands,レート･トバゴ島（英領バージン諸島）,,G
+Greece,ギリシャ,GR,H
+Greenland,グリーンランド,GL,H
+Grenada,グレナダ,GD,G
+Guadeloupe,グアドループ,GP,G
+Guam,グアム,GU,D
+Guatemala,グアテマラ,GT,G
+Guinea,ギニア,GN,J
+Guyana,ガイアナ,GY,G
+Haiti,ハイチ,HT,G
+Honduras,ホンジュラス,HN,G
+Hong Kong,香港,HK,V
+Hungary,ハンガリー,HU,H
+Iceland,アイスランド,IS,I
+India,インド,IN,O
+Indonesia,インドネシア,ID,T
+Iraq,イラク,IQ,I
+Ireland,アイルランド,IE,H
+Israel,イスラエル,IL,H
+Italy,イタリア,IT,M
+Ivory Coast,コートジボワール,CI,J
+Jamaica,ジャマイカ,JM,G
+Jordan,ヨルダン,JO,J
+Jost Van Dyke Islands,ヨスト・ヴァン・ダイク島（英領バージン諸島）,,G
+Kazakhstan,カザフスタン,KZ,I
+Kenya,ケニア,KE,J
+Kuwait,クウェート,KW,J
+Kyrgyzstan,キルギス,KG,I
+Laos,ラオス,LA,D
+Latvia,ラトビア,LV,I
+Lebanon,レバノン,LB,J
+Lesotho,レソト,LS,J
+Liberia,リベリア,LR,J
+Libya,リビヤ,LY,J
+Liechtenstein,リヒテンシュタイン,LI,H
+Lithuania,リトアニア,LT,I
+Luxembourg,ルクセンブルグ,LU,H
+Macau,マカオ,MO,A
+Macedonia,ケドニア/旧ユーゴスラビア,,I
+Madagascar,マダガスカル,MG,J
+Malawi,マラウイ,MW,J
+Malaysia,マレーシア,MY,Q
+Maldives,モルディブ,MV,J
+Mali,マリ,ML,J
+Malta,マルタ,MT,I
+Marshall Islands,マーシャル諸島,MH,H
+Martinique,マルティニーク,MQ,G
+Mauritania,モーリタニア,MR,J
+Mauritius,モーリシャス,MU,J
+Mexico,メキシコ,MX,F
+Micronesia,ミクロネシア,FM,D
+Moldova,モルドバ,MD,I
+Monaco,モナコ,MC,H
+Mongolia,モンゴル,MN,J
+Montenegro,モンテネグロ,,I
+Montserrat,モントセラト,MS,G
+Morocco,モロッコ,MA,J
+Mozambique,モザンビーク,MZ,J
+Namibia,ナミビア,NA,J
+Nepal,ネパール,NP,J
+Netherlands,オランダ,NL,M
+Nevis,ネイビス島,KN,G
+New Caledonia,ニューカレドニア,NC,D
+New Zealand,ニュージーランド,NZ,D
+Nicaragua,ニカラグア,NI,G
+Niger,ニジェール,NE,J
+Nigeria,ナイジェリア,NG,J
+Norfolk Island,ノーフォーク島（オーストラリア）,,U
+Norman Island,ノーマン島（英領バージン諸島）,,G
+Northern Mariana Islands,北マリアナ諸島,,D
+Norway,ノルウェー,NO,H
+Oman,オマーン,OM,J
+Pakistan,パキスタン,PK,J
+Palau,パラオ,PW,D
+Palestine Autonomous,パレスチナ,,J
+Panama,パナマ,PA,G
+Papua New Guinea,パプアニューギニア,PG,D
+Paraguay,パラグアイ,PY,G
+Peru,ペルー,PE,G
+Philippines,フィリピン,PH,S
+Poland,ポーランド,PL,H
+Portugal,ポルトガル,PT,H
+Puerto Rico,プエルトリコ,PR,F
+Qatar,カタール,QA,J
+Reunion,レユニオン,RE,J
+Romania,ルーマニア,RO,I
+Rota,ロタ島,,D
+Russia,ロシア,RU,I
+Rwanda,ルワンダ,RW,J
+Saba,サバ,,G
+Saipan,サイパン,,D
+Samoa,サモア,WS,D
+San Marino,サンマリノ,SM,M
+Saudi Arabia,サウジアラビア,SA,J
+Senegal,セネガル,SN,J
+Serbia,セルビア,RS,I
+Seychelles,セイシェル,SC,J
+Singapore,シンガポール,SG,Y
+Slovak Republic,スロバキア,SK,H
+Slovenia,スロベニア,SI,I
+South Africa,南アフリカ,ZA,J
+South Korea,大韓民国（韓国）,,Z
+Spain,スペイン,ES,M
+Sri Lanka,スリランカ,LK,J
+St. Barthelemy,セント･バーセレミイ,,G
+St. Christopher,セント・クリストファー,,G
+St. Croix Island,セント･クロイ島,,F
+St. Eustatius,セント･ユースタティウス,,G
+St. John,セント・ジョン,,F
+St. Kitts & Nevis,セント・クリストファー･ネイビス,,G
+St. Lucia,セント･ルシア,,G
+St. Maarten,セント・マーチン,SX,G
+St. Martin,セント・マーチン,,G
+St. Thomas,セント･トーマス,,F
+St. Vincent,セント･ビンセント,,G
+Suriname,スリナム,SR,G
+Swaziland,スワジランド,SZ,J
+Sweden,スウェーデン,SE,H
+Switzerland,スイス,CH,H
+Syria,シリア,SY,J
+Tahiti,タヒチ,,D
+Taiwan,台湾,TW,X
+Tanzania,タンザニア,TZ,J
+Thailand,タイ,TH,R
+Tinian,テニアン,,D
+Togo,トーゴ,TG,J
+Tonga,トンガ,TO,D
+Tortola Island,トルトラ島,,G
+Trinidad & Tobago,トリニダード・トバゴ,TT,G
+Tunisia,チュニジア,TN,J
+Turkey,トルコ,TR,I
+Turks & Caicos Islands,ークス諸島･カイコス諸島,,G
+U.S. (Western Region),アメリカ合衆国（郵便番号別）,,E
+U.S. Virgin Islands,米領バージン諸島,,E
+Uganda,ウガンダ,UG,J
+Ukraine,ウクライナ,UA,I
+Union Island,ユニオン島,,G
+United Arab Emirates,アラブ首長国連邦,AE,I
+United Kingdom,イギリス,GB,M
+Uruguay,ウルグアイ,UY,G
+Uzbekistan,ウズベキスタン,UZ,I
+Vanuatu,バヌアツ,VU,D
+Vatican City,バチカン,VA,M
+Venezuela,ベネズエラ,VE,G
+Vietnam,ベトナム,VN,N
+Wallis & Futuna,ウォリス・フツナ,,D
+Yemen,イエメン,YE,J
+Zambia,ザンビア,ZM,J
+Zimbabwe,ジンバブエ,ZW,J
+"Macedonia, Republic of",マケドニア,MK,I

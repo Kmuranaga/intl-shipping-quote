@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理画面 - 国際送料見積もりツール</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1a365d;
+            --primary-light: #2c5282;
+            --accent: #ed8936;
+            --bg: #f7fafc;
+            --card-bg: #ffffff;
+            --text: #2d3748;
+            --text-light: #718096;
+            --border: #e2e8f0;
+            --success: #38a169;
+            --error: #e53e3e;
+            --warning: #d69e2e;
+            --shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 { font-size: 1.25rem; }
+        .header-actions { display: flex; gap: 1rem; align-items: center; }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.5);
+            color: white;
+        }
+
+        .btn-outline:hover { background: rgba(255,255,255,0.1); }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+
+        /* ログインフォーム */
+        .login-card {
+            max-width: 400px;
+            margin: 4rem auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            padding: 2rem;
+        }
+
+        .login-card h2 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+        }
+
+        .form-group { margin-bottom: 1.25rem; }
+        .form-label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; }
+
+        .form-input, .form-textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1.5px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
+        .form-input:focus, .form-textarea:focus { outline: none; border-color: var(--primary); }
+        .form-textarea { resize: vertical; min-height: 100px; }
+
+        .btn-primary {
+            width: 100%;
+            padding: 0.875rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .btn-primary:hover { background: var(--primary-light); }
+
+        /* 管理パネル */
+        .admin-tabs {
+            display: flex;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 1.5rem;
+            background: white;
+            border-radius: 8px 8px 0 0;
+            overflow: hidden;
+        }
+
+        .admin-tab {
+            padding: 1rem 1.5rem;
+            background: none;
+            border: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-light);
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s;
+        }
+
+        .admin-tab:hover { color: var(--text); background: var(--bg); }
+
+        .admin-tab.active {
+            color: var(--primary);
+            background: white;
+        }
+
+        .admin-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--primary);
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .card-title { font-size: 1rem; font-weight: 600; color: var(--primary); }
+
+        /* テーブル */
+        .table-wrapper { overflow-x: auto; }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+
+        .data-table th, .data-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .data-table th {
+            background: var(--bg);
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+
+        .data-table tbody tr:hover { background: var(--bg); }
+
+        /* アップロード */
+        .upload-zone {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 1rem;
+        }
+
+        .upload-zone:hover { border-color: var(--primary); background: rgba(26, 54, 93, 0.02); }
+        .upload-zone.dragover { border-color: var(--accent); background: rgba(237, 137, 54, 0.05); }
+        .upload-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+        .upload-text { color: var(--text-light); font-size: 0.9rem; }
+        .upload-text strong { color: var(--primary); }
+
+        /* サービスリスト */
+        .service-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            background: var(--bg);
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+        }
+
+        .service-item-info { display: flex; align-items: center; gap: 1rem; }
+        .service-color { width: 16px; height: 16px; border-radius: 4px; }
+        .service-item-actions { display: flex; gap: 0.5rem; }
+
+        /* ボタン */
+        .btn-icon {
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        .btn-edit { background: var(--primary); color: white; }
+        .btn-delete { background: var(--error); color: white; }
+        .btn-icon:hover { opacity: 0.85; transform: scale(1.05); }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .btn-success:hover { background: #2f855a; }
+
+        .btn-secondary {
+            background: var(--bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        .btn-secondary:hover { background: var(--border); }
+
+        .add-btn {
+            width: 100%;
+            padding: 0.875rem;
+            background: white;
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            color: var(--text-light);
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .add-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+        .action-bar {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--text);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: var(--shadow-lg);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 2000;
+        }
+
+        .toast.visible { transform: translateY(0); opacity: 1; }
+        .toast.success { background: var(--success); }
+        .toast.error { background: var(--error); }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            background: var(--bg);
+            border-radius: 4px;
+            font-size: 0.75rem;
+            color: var(--text-light);
+        }
+
+        @media (max-width: 768px) {
+            .header { flex-direction: column; gap: 1rem; text-align: center; }
+            .admin-tabs { flex-wrap: wrap; }
+            .admin-tab { flex: 1; min-width: 50%; text-align: center; }
+            .card-header { flex-direction: column; gap: 1rem; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+    <!-- ログインセクション -->
+    <div id="loginSection">
+        <header class="header">
+            <h1>管理画面</h1>
+            <a href="index.html" class="btn btn-outline">← ツールに戻る</a>
+        </header>
+        
+        <div class="login-card">
+            <h2>ログイン</h2>
+            <div class="form-group">
+                <label class="form-label">ユーザー名</label>
+                <input type="text" class="form-input" id="username" placeholder="admin">
+            </div>
+            <div class="form-group">
+                <label class="form-label">パスワード</label>
+                <input type="password" class="form-input" id="password" placeholder="パスワード">
+            </div>
+            <button class="btn-primary" id="loginBtn">ログイン</button>
+            <p style="text-align: center; margin-top: 1rem; font-size: 0.8rem; color: var(--text-light);">
+                初期設定: admin / password
+            </p>
+        </div>
+    </div>
+
+    <!-- 管理セクション -->
+    <div id="adminSection" style="display: none;">
+        <header class="header">
+            <h1>管理画面</h1>
+            <div class="header-actions">
+                <a href="index.html" class="btn btn-outline">← ツールに戻る</a>
+                <button class="btn btn-outline" id="logoutBtn">ログアウト</button>
+            </div>
+        </header>
+
+        <div class="container">
+            <div class="admin-tabs">
+                <button class="admin-tab active" data-tab="rates">運賃データ</button>
+                <button class="admin-tab" data-tab="services">サービス管理</button>
+                <button class="admin-tab" data-tab="countries">国・ゾーン</button>
+                <button class="admin-tab" data-tab="carrier_zones">キャリア別ゾーン</button>
+                <button class="admin-tab" data-tab="settings">サイト設定</button>
+            </div>
+
+            <!-- 運賃データタブ -->
+            <div class="tab-content active" id="tab-rates">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">CSVアップロード</div>
+                        <div>
+                            <button class="btn-secondary" onclick="downloadTemplate('rates')">📥 テンプレート</button>
+                            <button class="btn-secondary" onclick="downloadCurrentData('rates')">📤 バックアップ</button>
+                        </div>
+                    </div>
+                    <div class="upload-zone" id="ratesUpload">
+                        <input type="file" id="ratesFile" accept=".csv" style="display: none;">
+                        <div class="upload-icon">📁</div>
+                        <p class="upload-text">
+                            <strong>クリックしてCSVを選択</strong><br>
+                            またはドラッグ＆ドロップ
+                        </p>
+                    </div>
+                    <label style="display: inline-flex; gap: 0.5rem; align-items: center; font-size: 0.85rem; color: var(--text-light);">
+                        <input type="checkbox" id="ratesUploadAppendMode">
+                        既存データに追加（同一キーは上書き）
+                    </label>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">運賃データ一覧 <span class="badge" id="ratesCount">0件</span></div>
+                        <button class="btn-secondary" onclick="addRate()">+ 追加</button>
+                    </div>
+                    <div class="table-wrapper" style="max-height: 400px; overflow-y: auto;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>サービス</th>
+                                    <th>ゾーン</th>
+                                    <th>重量</th>
+                                    <th>料金</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ratesTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- サービス管理タブ -->
+            <div class="tab-content" id="tab-services">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">配送サービス管理</div>
+                        <button class="btn-secondary" onclick="downloadCurrentData('services')">📤 バックアップ</button>
+                    </div>
+                    <div id="servicesList"></div>
+                    <button class="add-btn" onclick="addService()">+ 新しいサービスを追加</button>
+                </div>
+            </div>
+
+            <!-- 国・ゾーンタブ -->
+            <div class="tab-content" id="tab-countries">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">CSVアップロード</div>
+                        <div>
+                            <button class="btn-secondary" onclick="downloadTemplate('countries')">📥 テンプレート</button>
+                            <button class="btn-secondary" onclick="downloadCurrentData('countries')">📤 バックアップ</button>
+                        </div>
+                    </div>
+                    <div class="upload-zone" id="countriesUpload">
+                        <input type="file" id="countriesFile" accept=".csv" style="display: none;">
+                        <div class="upload-icon">📁</div>
+                        <p class="upload-text">
+                            <strong>クリックしてCSVを選択</strong><br>
+                            またはドラッグ＆ドロップ
+                        </p>
+                    </div>
+                    <label style="display: inline-flex; gap: 0.5rem; align-items: center; font-size: 0.85rem; color: var(--text-light);">
+                        <input type="checkbox" id="countriesUploadAppendMode">
+                        既存データに追加（同一キーは上書き）
+                    </label>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">国・ゾーン一覧 <span class="badge" id="countriesCount">0件</span></div>
+                        <button class="btn-secondary" onclick="addCountry()">+ 追加</button>
+                    </div>
+                    <div class="table-wrapper" style="max-height: 400px; overflow-y: auto;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>国名</th>
+                                    <th>コード</th>
+                                    <th>ゾーン</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="countriesTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- キャリア別ゾーンタブ -->
+            <div class="tab-content" id="tab-carrier_zones">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">CSVアップロード</div>
+                        <div>
+                            <button class="btn-secondary" onclick="downloadTemplate('carrier_zones')">📥 テンプレート</button>
+                            <button class="btn-secondary" onclick="downloadCurrentData('carrier_zones')">📤 バックアップ</button>
+                        </div>
+                    </div>
+
+                    <div class="upload-zone" id="carrierZonesUpload">
+                        <input type="file" id="carrierZonesFile" accept=".csv" style="display: none;">
+                        <div class="upload-icon">📁</div>
+                        <p class="upload-text">
+                            <strong>クリックしてCSVを選択</strong><br>
+                            またはドラッグ＆ドロップ
+                        </p>
+                    </div>
+                    <label style="display: inline-flex; gap: 0.5rem; align-items: center; font-size: 0.85rem; color: var(--text-light);">
+                        <input type="checkbox" id="carrierZonesUploadAppendMode">
+                        既存データに追加（同一キーは上書き）
+                    </label>
+                    <p style="font-size: 0.8rem; color: var(--text-light);">
+                        受け付け形式: `carrier,country_code,zone`
+                    </p>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">キャリア別ゾーン一覧 <span class="badge" id="carrierZonesCount">0件</span></div>
+                        <button class="btn-secondary" onclick="addCarrierZone()">+ 追加</button>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 220px 220px 1fr; gap: 0.75rem; margin-bottom: 1rem;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label">キャリア（絞り込み）</label>
+                            <input type="text" class="form-input" id="carrierZonesCarrierFilter" placeholder="例: fedex">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label">ゾーン（絞り込み）</label>
+                            <input type="text" class="form-input" id="carrierZonesZoneFilter" placeholder="例: E / 1">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label">ゾーン→国コード 逆引き（キャリア + ゾーンで検索）</label>
+                            <input type="text" class="form-input" id="carrierZonesLookup" placeholder="例: fedex E / dhl 5">
+                        </div>
+                    </div>
+                    <div id="carrierZonesLookupResult" style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 0.75rem;"></div>
+
+                    <div class="table-wrapper" style="max-height: 400px; overflow-y: auto;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>キャリア</th>
+                                    <th>国コード</th>
+                                    <th>ゾーン</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="carrierZonesTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- サイト設定タブ -->
+            <div class="tab-content" id="tab-settings">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">サイト文言設定</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">サイトタイトル</label>
+                        <input type="text" class="form-input" id="settingTitle">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">サブタイトル</label>
+                        <input type="text" class="form-input" id="settingSubtitle">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">注意事項（改行で区切り）</label>
+                        <textarea class="form-textarea" id="settingNotes" rows="5"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">フッターテキスト</label>
+                        <input type="text" class="form-input" id="settingFooter">
+                    </div>
+                    <div class="action-bar">
+                        <button class="btn-success" onclick="saveSettings()">設定を保存</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="./js/admin.js"></script>
+</body>
+</html>

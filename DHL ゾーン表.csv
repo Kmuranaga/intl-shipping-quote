@@ -1,0 +1,231 @@
+発送国別料金区分,ZONE,国コード
+"Korea, Republic Of",1,KR
+Taiwan,1,TW
+"China, People's Republic",2,CN
+Hong Kong,2,HK
+Macau,2,MO
+Brunei,3,BN
+Indonesia,3,ID
+Malaysia,3,MY
+"Philippines, The",3,PH
+Singapore,3,SG
+Thailand,3,TH
+Vietnam,3,VN
+American Samoa,4,AS
+Australia,4,AU
+Bangladesh,4,BD
+Bhutan,4,BT
+Cambodia,4,KH
+Cook Islands,4,CK
+East Timor,4,TL
+Fiji,4,FJ
+India,4,IN
+Kiribati,4,KI
+Lao People's Democratic Republic,4,LA
+Marshall Islands,4,MH
+"Micronesia, Federated States of",4,FM
+Myanmar,4,MM
+"Nauru, Republic Of",4,NR
+New Caledonia,4,NC
+New Zealand,4,NZ
+Niue,4,NU
+Palau,4,PW
+Papua New Guinea,9,PG
+Saipan,4,
+Samoa,4,WS
+Solomon Islands,4,SB
+Tahiti,4,
+Tonga,4,TO
+Tuvalu,4,TV
+Vanuatu,4,VU
+Canada,5,CA
+Mexico,5,MX
+United States Of America,5,US
+Austria,6,AT
+Belgium,6,BE
+Bulgaria,6,BG
+Cyprus,6,CY
+"Czech Republic, The",6,CZ
+Denmark,6,DK
+Estonia,6,EE
+Finland,6,FI
+France,6,FR
+Germany,6,DE
+Greece,6,GR
+Hungary,6,HU
+"Ireland, Republic Of",6,IE
+Italy,6,IT
+Latvia,6,LV
+Lithuania,6,LT
+Luxembourg,6,LU
+"Macedonia, Republic of",6,MK
+Malta,6,MT
+Monaco,6,MC
+"Netherlands, The",6,NL
+Norway,6,NO
+Poland,6,PL
+Portugal,6,PT
+Romania,6,RO
+San Marino,6,SM
+Slovakia,6,SK
+Slovenia,6,SI
+Spain,6,ES
+Sweden,6,SE
+Switzerland,6,CH
+Turkey,6,TR
+United Kingdom,6,UK
+Albania,7,AL
+Andorra,7,AD
+Armenia,7,AM
+Azerbaijan,7,AZ
+Belarus,7,BY
+Bosnia and Herzegovina,7,BA
+Croatia,7,HR
+Faroe Islands,7,FO
+Georgia,7,GE
+Gibraltar,7,GI
+Greenland,7,GL
+Guernsey,7,GG
+Jersey,7,JE
+Kazakhstan,7,KZ
+Kosovo,7,
+Kyrgyzstan,7,KG
+Liechtenstein,7,LI
+"Moldova, Republic Of",7,MD
+"Montenegro, Republic of",7,ME
+"Russian Federation, The",7,RU
+"Serbia, Republic of",7,RS
+Tajikistan,7,TJ
+Ukraine,7,UA
+Anguilla,8,AI
+Antigua,8,AG
+Argentina,8,AR
+Aruba,8,AW
+Bahamas,8,BS
+Barbados,8,BB
+Belize,8,BZ
+Bermuda,8,BM
+Bolivia,8,BO
+Bonaire,8,BQ
+Brazil,8,BR
+Cayman Islands,8,KY
+Chile,8,CL
+Colombia,8,CO
+Costa Rica,8,CR
+Cuba,8,CU
+Curacao,8,CW
+Dominica,8,DM
+Dominican Republic,8,DO
+Ecuador,8,EC
+El Salvador,8,SV
+Falkland Islands,8,FK
+French Guyana,8,GY
+Grenada,8,GD
+Guadeloupe,8,GP
+Guatemala,8,GT
+Guyana (British),8,GY
+Haiti,8,HT
+Honduras,8,HN
+Iceland,8,IS
+Jamaica,8,JM
+Martinique,8,MQ
+Montserrat,8,MS
+Nevis,8,KN
+Nicaragua,8,NI
+Panama,8,PA
+Paraguay,8,PY
+Peru,8,PE
+Puerto Rico,8,PR
+St. Barthelemy,8,BL
+St. Eustatius,8,BQ
+St. Kitts,8,KN
+St. Lucia,8,LC
+St. Maarten,8,SX
+St. Vincent,8,VC
+Suriname,8,SR
+Trinidad and Tobago,8,TT
+Turks and Caicos Islands,8,TC
+Uruguay,8,UY
+Uzbekistan,8,UZ
+Venezuela,8,VE
+Virgin Islands (British),8,VG
+Virgin Islands (US),8,VI
+Afghanistan,9,AF
+Algeria,9,DZ
+Angola,9,AO
+Bahrain,9,BH
+Benin,9,BJ
+Botswana,9,BW
+Burkina Faso,9,BF
+Burundi,9,BI
+Cameroon,9,CM
+"Canary Islands, The",9,
+Cape Verde,9,CV
+Central African Republic,9,CF
+Chad,9,TD
+Comoros,9,KM
+Congo,9,CG
+"Congo, The Democratic Republic of the",9,CD
+Cote d'Ivoire,9,CI
+Djibouti,9,DJ
+Egypt,9,EG
+Eritrea,9,ER
+Ethiopia,9,ET
+Gabon,9,GA
+Gambia,9,GM
+Ghana,9,GH
+Guam,9,GU
+Guinea Republic,9,GN
+Guinea-Bissau,9,GW
+Guinea-Equatorial,9,GQ
+Iran (Islamic Republic of),9,IR
+Iraq,9,IQ
+Israel,9,IL
+Jordan,9,JO
+Kenya,9,KE
+Kuwait,9,KW
+Lebanon,9,LB
+Lesotho,9,LS
+Liberia,9,LR
+Libya,9,LY
+Madagascar,9,MG
+Malawi,9,MW
+Maldives,9,MV
+Mali,9,ML
+Mauritania,9,MR
+Mauritius,9,MU
+Mayotte,9,YT
+Mongolia,9,MN
+Morocco,9,MA
+Mozambique,9,MZ
+Namibia,9,NA
+Nepal,9,NP
+Niger,9,NE
+Nigeria,9,NG
+Oman,9,OM
+Pakistan,9,PK
+Qatar,9,QA
+"Reunion, Island Of",9,RE
+Rwanda,9,RW
+Sao Tome and Principe,9,ST
+Saudi Arabia,9,SA
+Senegal,9,SN
+Seychelles,9,SC
+Sierra Leone,9,SL
+Somalia,9,SO
+"Somaliland, Rep of (North Somalia",9,
+South Africa,9,ZA
+South Sudan,9,SS
+Sri Lanka,9,LK
+St. Helena,9,SH
+Sudan,9,SD
+Swaziland,9,SZ
+Syria,9,SY
+Tanzania,9,TZ
+Togo,9,TG
+Tunisia,9,TN
+Uganda,9,UG
+United Arab Emirates,9,AE
+"Yemen, Republic of",9,YE
+Zambia,9,ZM
+Zimbabwe,9,ZW
