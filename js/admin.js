@@ -290,10 +290,10 @@ async function deleteRate(index) {
 }
 
 async function addRate() {
-    const service = prompt('サービス名:');
+    const service = prompt('サービス（サービス管理で登録したサービス名）:');
     if (!service) return;
     
-    const zone = prompt('ゾーン:');
+    const zone = prompt('ゾーン（carrier_zonesで登録したゾーン）:');
     if (zone === null) return;
     const zoneStr = String(zone).trim();
     if (!zoneStr) return;
@@ -386,7 +386,7 @@ async function addService() {
     const id = prompt('ID (英数字):');
     if (!id) return;
     
-    const name = prompt('サービス名:');
+    const name = prompt('サービス名（サービス管理で登録したサービス名）:');
     if (!name) return;
     
     const carrier = prompt('キャリアキー（例: fedex）:');
