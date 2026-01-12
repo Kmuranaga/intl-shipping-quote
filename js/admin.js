@@ -338,7 +338,6 @@ function renderServicesList() {
                 <div>
                     <strong>${service.name}</strong>
                     <div style="font-size: 0.8rem; color: var(--text-light);">${service.description}</div>
-                    <div style="font-size: 0.75rem; color: var(--text-light);">ID: ${service.id}</div>
                     <div style="font-size: 0.75rem; color: var(--text-light);">キャリア: ${service.carrier || '(未設定)'}</div>
                 </div>
             </div>
