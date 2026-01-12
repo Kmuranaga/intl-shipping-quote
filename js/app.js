@@ -166,17 +166,17 @@ function findRate(serviceName, zone, weight) {
     return candidates[0];
 }
 
-function getCarrierKeyFromServiceId(serviceId) {
-    const id = String(serviceId || '').toLowerCase();
-    if (id.includes('fedex')) return 'fedex';
-    if (id.includes('dhl')) return 'dhl';
-    if (id.includes('ups')) return 'ups';
-    if (id.includes('ems')) return 'ems';
-    return '';
+function normalizeCarrierKey(value) {
+    const v = String(value ?? '').trim().toLowerCase();
+    return v;
+}
+
+function getCarrierKeyFromService(service) {
+    return normalizeCarrierKey(service?.carrier);
 }
 
 function getZoneForService(service, country) {
-    const carrier = getCarrierKeyFromServiceId(service.id);
+    const carrier = getCarrierKeyFromService(service);
     const countryCode = String(country?.code || '').trim().toUpperCase();
     const mapped = carrier && countryCode ? carrierZoneMap.get(`${carrier}:${countryCode}`) : undefined;
     if (mapped !== undefined) return mapped;
@@ -218,7 +218,7 @@ function calculate() {
     const resultsHtml = services.map(service => {
         const zone = getZoneForService(service, selectedCountry);
         const rate = findRate(service.name, zone, appliedWeight);
-        const carrierClass = getCarrierClass(service.id);
+        const carrierClass = getCarrierClass(service);
         
         if (rate) {
             return `
@@ -255,12 +255,9 @@ function calculate() {
     document.getElementById('resultsSection').classList.add('visible');
 }
 
-function getCarrierClass(serviceId) {
-    if (serviceId.includes('fedex')) return 'fedex';
-    if (serviceId.includes('dhl')) return 'dhl';
-    if (serviceId.includes('ups')) return 'ups';
-    if (serviceId.includes('ems')) return 'ems';
-    return '';
+function getCarrierClass(service) {
+    // CSSクラスは carrier と同じキーを期待
+    return getCarrierKeyFromService(service) || '';
 }
 
 // ==========================================

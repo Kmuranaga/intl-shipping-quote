@@ -59,6 +59,31 @@ let editData = {
 };
 
 // ==========================================
+// services: carrier 正規化（carrier必須）
+// ==========================================
+
+function normalizeCarrierKey(value) {
+    return String(value ?? '').trim().toLowerCase();
+}
+
+function normalizeServiceRow(service) {
+    const s = service || {};
+    const id = String(s.id ?? '').trim();
+    const carrier = normalizeCarrierKey(s.carrier);
+    return {
+        id,
+        name: String(s.name ?? '').trim(),
+        carrier,
+        color: String(s.color ?? '').trim(),
+        description: String(s.description ?? '').trim()
+    };
+}
+
+function normalizeServicesInPlace() {
+    editData.services = (editData.services || []).map(normalizeServiceRow);
+}
+
+// ==========================================
 // 認証
 // ==========================================
 
@@ -141,6 +166,9 @@ async function loadAllAdminData() {
         if (countriesRes.success) editData.countries = countriesRes.data;
         if (carrierZonesRes.success) editData.carrier_zones = carrierZonesRes.data;
         if (settingsRes.success) editData.settings = settingsRes.data;
+
+        // services は carrier 必須（小文字正規化のみ）
+        normalizeServicesInPlace();
         
         renderCurrentTab();
     } catch (error) {
@@ -311,6 +339,7 @@ function renderServicesList() {
                     <strong>${service.name}</strong>
                     <div style="font-size: 0.8rem; color: var(--text-light);">${service.description}</div>
                     <div style="font-size: 0.75rem; color: var(--text-light);">ID: ${service.id}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-light);">キャリア: ${service.carrier || '(未設定)'}</div>
                 </div>
             </div>
             <div class="service-item-actions">
@@ -327,13 +356,20 @@ async function editService(index) {
     const name = prompt('サービス名:', service.name);
     if (name === null) return;
     
+    const carrier = prompt('キャリアキー（例: fedex）:', service.carrier || '');
+    if (carrier === null) return;
+    if (!normalizeCarrierKey(carrier)) {
+        showToast('キャリアキーは必須です', 'error');
+        return;
+    }
+    
     const description = prompt('説明:', service.description);
     if (description === null) return;
     
     const color = prompt('色 (HEX):', service.color);
     if (color === null) return;
     
-    editData.services[index] = { ...service, name, description, color };
+    editData.services[index] = normalizeServiceRow({ ...service, name, carrier, description, color });
     renderServicesList();
     await saveDataWithMessage('services', editData.services, '変更しました');
 }
@@ -353,18 +389,26 @@ async function addService() {
     const name = prompt('サービス名:');
     if (!name) return;
     
+    const carrier = prompt('キャリアキー（例: fedex）:');
+    if (carrier === null) return;
+    if (!normalizeCarrierKey(carrier)) {
+        showToast('キャリアキーは必須です', 'error');
+        return;
+    }
+    
     const description = prompt('説明:');
     if (description === null) return;
     
     const color = prompt('色 (HEX):', '#333333');
     if (!color) return;
     
-    editData.services.push({ id, name, description, color });
+    editData.services.push(normalizeServiceRow({ id, name, carrier, description, color }));
     renderServicesList();
     await saveDataWithMessage('services', editData.services, '追加しました');
 }
 
 async function saveServices() {
+    normalizeServicesInPlace();
     await saveDataWithMessage('services', editData.services, 'サービス情報を保存しました');
 }
 
@@ -738,9 +782,9 @@ function downloadCurrentData(type) {
             filename = 'countries_backup.csv';
             break;
         case 'services':
-            content = 'id,name,color,description\n';
+            content = 'id,name,carrier,color,description\n';
             content += editData.services.map(s => 
-                `${s.id},${s.name},${s.color},${s.description}`
+                `${s.id},${s.name},${s.carrier || ''},${s.color},${s.description}`
             ).join('\n');
             filename = 'services_backup.csv';
             break;

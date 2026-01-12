@@ -66,7 +66,7 @@ switch ($type) {
         break;
     case 'services':
         $targetPath = CSV_SERVICES;
-        $requiredHeaders = ['id', 'name', 'color', 'description'];
+        $requiredHeaders = ['id', 'name', 'carrier', 'color', 'description'];
         break;
     case 'countries':
         $targetPath = CSV_COUNTRIES;
@@ -221,6 +221,7 @@ if ($mode === 'append') {
         } elseif ($type === 'services') {
             $r['id'] = $r['id'] ?? '';
             $r['name'] = $r['name'] ?? '';
+            $r['carrier'] = strtolower($r['carrier'] ?? '');
             $r['color'] = $r['color'] ?? '';
             $r['description'] = $r['description'] ?? '';
         } elseif ($type === 'carrier_zones') {
