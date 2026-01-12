@@ -1,1 +1,2 @@
-DB/*.csv.bak
+DB/*.bak
+DB/**/*.bak
