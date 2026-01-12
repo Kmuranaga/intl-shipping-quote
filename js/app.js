@@ -180,8 +180,7 @@ function getZoneForService(service, country) {
     const countryCode = String(country?.code || '').trim().toUpperCase();
     const mapped = carrier && countryCode ? carrierZoneMap.get(`${carrier}:${countryCode}`) : undefined;
     if (mapped !== undefined) return mapped;
-    // 互換: 既存の共通ゾーン（数値）を文字列として扱う
-    return String(country?.zone ?? '').trim();
+    return '';
 }
 
 function roundUpToHalf(value) {
@@ -215,10 +214,61 @@ function calculate() {
     document.getElementById('appliedWeight').textContent = `${appliedWeight.toFixed(2)} kg`;
 
     // 結果計算
+    const missingCarrier = [];
+    const missingZone = [];
+    services.forEach(service => {
+        const carrier = getCarrierKeyFromService(service);
+        if (!carrier) missingCarrier.push(service.name || service.id || '(unknown)');
+        else {
+            const zone = getZoneForService(service, selectedCountry);
+            if (!zone) missingZone.push(`${carrier}:${String(selectedCountry?.code || '').trim().toUpperCase()}`);
+        }
+    });
+    const uniqueMissingCarrier = Array.from(new Set(missingCarrier));
+    const uniqueMissingZone = Array.from(new Set(missingZone));
+    if (uniqueMissingCarrier.length || uniqueMissingZone.length) {
+        const msgParts = [];
+        if (uniqueMissingCarrier.length) msgParts.push(`carrier未設定のサービス: ${uniqueMissingCarrier.join(', ')}`);
+        if (uniqueMissingZone.length) msgParts.push(`carrier_zones未設定: ${uniqueMissingZone.join(', ')}`);
+        showToast(msgParts.join(' / '), 'error');
+    }
+
     const resultsHtml = services.map(service => {
+        const carrier = getCarrierKeyFromService(service);
         const zone = getZoneForService(service, selectedCountry);
-        const rate = findRate(service.name, zone, appliedWeight);
         const carrierClass = getCarrierClass(service);
+
+        if (!carrier) {
+            return `
+                <div class="result-card ${carrierClass}">
+                    <div class="carrier-logo" style="background: ${service.color}">${service.name.split(' ')[0]}</div>
+                    <div class="result-info">
+                        <h3>${service.name}</h3>
+                        <p>${service.description}</p>
+                    </div>
+                    <div class="result-price">
+                        <div class="no-service">キャリア未設定</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        if (!zone) {
+            return `
+                <div class="result-card ${carrierClass}">
+                    <div class="carrier-logo" style="background: ${service.color}">${service.name.split(' ')[0]}</div>
+                    <div class="result-info">
+                        <h3>${service.name}</h3>
+                        <p>${service.description}</p>
+                    </div>
+                    <div class="result-price">
+                        <div class="no-service">ゾーン未設定（carrier_zones）</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        const rate = findRate(service.name, zone, appliedWeight);
         
         if (rate) {
             return `

@@ -413,14 +413,14 @@ async function saveServices() {
 }
 
 // ==========================================
-// 国・ゾーン管理
+// 国管理
 // ==========================================
 
 function renderCountriesTable() {
     const tbody = document.getElementById('countriesTableBody');
     
     if (editData.countries.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 2rem;">データがありません</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; padding: 2rem;">データがありません</td></tr>';
         return;
     }
     
@@ -428,7 +428,6 @@ function renderCountriesTable() {
         <tr>
             <td>${country.name}</td>
             <td>${country.code}</td>
-            <td>${country.zone}</td>
             <td>
                 <button class="btn-icon btn-edit" onclick="editCountry(${index})" title="編集">✏️</button>
                 <button class="btn-icon btn-delete" onclick="deleteCountry(${index})" title="削除">🗑️</button>
@@ -447,11 +446,7 @@ async function editCountry(index) {
     
     const code = prompt('国コード:', country.code);
     if (code === null) return;
-    
-    const zone = prompt('ゾーン (1-5):', country.zone);
-    if (zone === null || isNaN(zone)) return;
-    
-    editData.countries[index] = { name, code, zone: parseInt(zone) };
+    editData.countries[index] = { name, code };
     renderCountriesTable();
     await saveDataWithMessage('countries', editData.countries, '変更しました');
 }
@@ -470,11 +465,7 @@ async function addCountry() {
     
     const code = prompt('国コード (例: JP):');
     if (!code) return;
-    
-    const zone = prompt('ゾーン (1-5):');
-    if (!zone || isNaN(zone)) return;
-    
-    editData.countries.push({ name, code, zone: parseInt(zone) });
+    editData.countries.push({ name, code });
     renderCountriesTable();
     await saveDataWithMessage('countries', editData.countries, '追加しました');
 }
@@ -515,6 +506,7 @@ function renderCarrierZonesTable() {
         tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 2rem;">データがありません</td></tr>';
         countEl.textContent = '0件';
         updateCarrierZonesLookup();
+        renderMissingCarrierZones();
         return;
     }
 
@@ -541,6 +533,103 @@ function renderCarrierZonesTable() {
 
     countEl.textContent = `${filtered.length}件`;
     updateCarrierZonesLookup();
+    renderMissingCarrierZones();
+}
+
+function buildCarrierZoneKey(carrier, countryCode) {
+    const c = normalizeCarrierInput(carrier);
+    const cc = String(countryCode || '').trim().toUpperCase();
+    if (!c || !cc) return '';
+    return `${c}|${cc}`;
+}
+
+function getServiceCarriers() {
+    const carriers = new Set();
+    (editData.services || []).forEach(s => {
+        const c = normalizeCarrierKey(s?.carrier);
+        if (c) carriers.add(c);
+    });
+    return Array.from(carriers).sort();
+}
+
+function getCountryCodes() {
+    const codes = new Set();
+    (editData.countries || []).forEach(c => {
+        const code = String(c?.code || '').trim().toUpperCase();
+        if (code) codes.add(code);
+    });
+    return Array.from(codes).sort();
+}
+
+function getExistingCarrierZoneKeySet() {
+    const set = new Set();
+    (editData.carrier_zones || []).forEach(r => {
+        const key = buildCarrierZoneKey(r?.carrier, r?.country_code);
+        const zone = normalizeZoneInput(r?.zone);
+        // zone が空は「未設定」として不足扱いにする
+        if (key && zone) set.add(key);
+    });
+    return set;
+}
+
+function computeMissingCarrierZones() {
+    const carriers = getServiceCarriers();
+    const countryCodes = getCountryCodes();
+    const existing = getExistingCarrierZoneKeySet();
+
+    const missing = [];
+    carriers.forEach(carrier => {
+        countryCodes.forEach(cc => {
+            const key = buildCarrierZoneKey(carrier, cc);
+            if (!key) return;
+            if (!existing.has(key)) missing.push({ carrier, country_code: cc });
+        });
+    });
+    return missing;
+}
+
+function renderMissingCarrierZones() {
+    const countEl = document.getElementById('carrierZonesMissingCount');
+    const listEl = document.getElementById('carrierZonesMissingList');
+    if (!countEl || !listEl) return;
+
+    const missing = computeMissingCarrierZones();
+    countEl.textContent = `${missing.length}件`;
+
+    if (missing.length === 0) {
+        listEl.textContent = '不足なし（100%埋まっています）';
+        return;
+    }
+
+    // 表示は多すぎると重いので先頭だけ
+    const head = missing.slice(0, 200);
+    const text = head.map(m => `${m.carrier}:${m.country_code}`).join(', ');
+    listEl.textContent = missing.length > head.length
+        ? `${text} …（他 ${missing.length - head.length} 件）`
+        : text;
+}
+
+async function generateMissingCarrierZones() {
+    const missing = computeMissingCarrierZones();
+    if (missing.length === 0) {
+        showToast('不足マッピングはありません', 'success');
+        return;
+    }
+    if (!confirm(`不足マッピングを ${missing.length} 件追加します（zone=TODO）\n後で一覧から zone を編集してください。`)) return;
+
+    const existingKeyAll = new Set((editData.carrier_zones || [])
+        .map(r => buildCarrierZoneKey(r?.carrier, r?.country_code))
+        .filter(Boolean));
+
+    missing.forEach(m => {
+        const key = buildCarrierZoneKey(m.carrier, m.country_code);
+        if (!key || existingKeyAll.has(key)) return;
+        existingKeyAll.add(key);
+        editData.carrier_zones.push({ carrier: m.carrier, country_code: m.country_code, zone: 'TODO' });
+    });
+
+    renderCarrierZonesTable();
+    await saveDataWithMessage('carrier_zones', editData.carrier_zones, '不足マッピングを追加しました');
 }
 
 function updateCarrierZonesLookup() {
@@ -740,7 +829,7 @@ function downloadTemplate(type) {
             filename = 'rates_template.csv';
             break;
         case 'countries':
-            content = 'name,code,zone\nアメリカ,US,1\n日本,JP,3';
+            content = 'name,code\nアメリカ,US\n日本,JP';
             filename = 'countries_template.csv';
             break;
         case 'carrier_zones':
@@ -775,9 +864,9 @@ function downloadCurrentData(type) {
             filename = 'rates_backup.csv';
             break;
         case 'countries':
-            content = 'name,code,zone\n';
+            content = 'name,code\n';
             content += editData.countries.map(c => 
-                `${c.name},${c.code},${c.zone}`
+                `${c.name},${c.code}`
             ).join('\n');
             filename = 'countries_backup.csv';
             break;

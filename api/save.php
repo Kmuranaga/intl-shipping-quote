@@ -109,7 +109,7 @@ switch ($type) {
         break;
         
     case 'countries':
-        $headers = ['name', 'code', 'zone'];
+        $headers = ['name', 'code'];
         if (writeCSV(CSV_COUNTRIES, $data, $headers)) {
             $response['success'] = true;
             $response['message'] = '国情報を保存しました';

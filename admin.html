@@ -376,7 +376,7 @@
             <div class="admin-tabs">
                 <button class="admin-tab active" data-tab="rates">運賃データ</button>
                 <button class="admin-tab" data-tab="services">サービス管理</button>
-                <button class="admin-tab" data-tab="countries">国・ゾーン</button>
+                <button class="admin-tab" data-tab="countries">国管理</button>
                 <button class="admin-tab" data-tab="carrier_zones">キャリア別ゾーン</button>
                 <button class="admin-tab" data-tab="settings">サイト設定</button>
             </div>
@@ -439,7 +439,7 @@
                 </div>
             </div>
 
-            <!-- 国・ゾーンタブ -->
+            <!-- 国タブ -->
             <div class="tab-content" id="tab-countries">
                 <div class="card">
                     <div class="card-header">
@@ -465,7 +465,7 @@
 
                 <div class="card">
                     <div class="card-header">
-                        <div class="card-title">国・ゾーン一覧 <span class="badge" id="countriesCount">0件</span></div>
+                        <div class="card-title">国一覧 <span class="badge" id="countriesCount">0件</span></div>
                         <button class="btn-secondary" onclick="addCountry()">+ 追加</button>
                     </div>
                     <div class="table-wrapper" style="max-height: 400px; overflow-y: auto;">
@@ -474,7 +474,6 @@
                                 <tr>
                                     <th>国名</th>
                                     <th>コード</th>
-                                    <th>ゾーン</th>
                                     <th>操作</th>
                                 </tr>
                             </thead>
@@ -533,6 +532,25 @@
                         </div>
                     </div>
                     <div id="carrierZonesLookupResult" style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 0.75rem;"></div>
+
+                    <div class="card"
+                        style="margin: 0 0 1rem 0; border: 1px dashed rgba(255,255,255,0.12); background: rgba(255,255,255,0.03);">
+                        <div class="card-header" style="padding: 0.75rem 1rem;">
+                            <div class="card-title" style="font-size: 0.95rem;">
+                                不足マッピング（carrier × 国コード）
+                                <span class="badge" id="carrierZonesMissingCount">0件</span>
+                            </div>
+                            <div style="display:flex; gap:0.5rem; align-items:center;">
+                                <button class="btn-secondary" onclick="generateMissingCarrierZones()">+ 不足を追加（zone=TODO）</button>
+                            </div>
+                        </div>
+                        <div style="padding: 0 1rem 1rem 1rem;">
+                            <div id="carrierZonesMissingHelp" style="font-size: 0.8rem; color: var(--text-light); margin-bottom: 0.5rem;">
+                                services の carrier と countries の 国コードから全組み合わせを作り、carrier_zones に無いものを一覧します。
+                            </div>
+                            <div id="carrierZonesMissingList" style="font-size: 0.85rem; color: var(--text-light);"></div>
+                        </div>
+                    </div>
 
                     <div class="table-wrapper" style="max-height: 400px; overflow-y: auto;">
                         <table class="data-table">

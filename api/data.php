@@ -85,8 +85,7 @@ switch ($type) {
         $response['data'] = array_map(function($row) {
             return [
                 'name' => $row['name'],
-                'code' => $row['code'],
-                'zone' => (int)$row['zone']
+                'code' => $row['code']
             ];
         }, $data);
         break;
@@ -128,8 +127,7 @@ switch ($type) {
             'countries' => array_map(function($row) {
                 return [
                     'name' => $row['name'],
-                    'code' => $row['code'],
-                    'zone' => (int)$row['zone']
+                    'code' => $row['code']
                 ];
             }, readCSV(CSV_COUNTRIES)),
             'carrier_zones' => array_map(function($row) {
