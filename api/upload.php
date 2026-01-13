@@ -230,6 +230,107 @@ function validateCarrierZonesRows($rowsLowerAssoc, $existingRowsLowerAssoc) {
     return ['ok' => true, 'error' => null, 'normalized' => $normalized];
 }
 
+/**
+ * rates バリデーション
+ * - 存在しないサービス（services.nameにない）を禁止
+ * - そのサービスのcarrierに対して carrier_zones で成立しない zone を禁止（=国コード/ゾーン不正）
+ * - service,zone,weight の重複（ファイル内/既存との重複）を禁止
+ * @param array<int, array<string,string>> $rowsLowerAssoc
+ * @param array<int, array<string,string>> $existingRowsLowerAssoc
+ * @return array{ok:bool,error:?string,normalized:array<int,array{service:string,zone:string,weight:string,price:string}>}
+ */
+function validateRatesRows($rowsLowerAssoc, $existingRowsLowerAssoc) {
+    // services: name -> carrier
+    [, $services] = readCSVLowerAssoc(CSV_SERVICES);
+    $serviceNameToCarrier = [];
+    foreach ($services as $s) {
+        $name = trim((string)($s['name'] ?? ''));
+        $carrier = normalizeCarrierKeyServer($s['carrier'] ?? '');
+        if ($name !== '') $serviceNameToCarrier[$name] = $carrier;
+    }
+
+    // countries: code set
+    [, $countries] = readCSVLowerAssoc(CSV_COUNTRIES);
+    $validCountryCodes = [];
+    foreach ($countries as $c) {
+        $code = normalizeCountryCodeServer($c['code'] ?? '');
+        if ($code !== '') $validCountryCodes[$code] = true;
+    }
+
+    // carrier_zones: carrier -> zones(set). 国コードが存在しない行は根拠にしない
+    [, $carrierZones] = readCSVLowerAssoc(CSV_CARRIER_ZONES);
+    $carrierToZones = [];
+    foreach ($carrierZones as $cz) {
+        $carrier = normalizeCarrierKeyServer($cz['carrier'] ?? '');
+        $countryCode = normalizeCountryCodeServer($cz['country_code'] ?? '');
+        $zone = trim((string)($cz['zone'] ?? ''));
+        if ($carrier === '' || $countryCode === '' || $zone === '') continue;
+        if (!isset($validCountryCodes[$countryCode])) continue;
+        if (!isset($carrierToZones[$carrier])) $carrierToZones[$carrier] = [];
+        $carrierToZones[$carrier][$zone] = true;
+    }
+
+    $normalizeRateRow = function($row) {
+        $service = trim((string)($row['service'] ?? ''));
+        $zone = trim((string)($row['zone'] ?? ''));
+        $weight = (string)((float)($row['weight'] ?? ''));
+        $price = (string)((int)($row['price'] ?? ''));
+        return ['service' => $service, 'zone' => $zone, 'weight' => $weight, 'price' => $price];
+    };
+
+    $existingKeys = [];
+    foreach ($existingRowsLowerAssoc as $r) {
+        $nr = $normalizeRateRow($r);
+        if ($nr['service'] === '' || $nr['zone'] === '' || $nr['weight'] === '') continue;
+        $existingKeys[$nr['service'] . '|' . $nr['zone'] . '|' . $nr['weight']] = true;
+    }
+
+    $seen = [];
+    $duplicates = [];
+    $missingServices = [];
+    $missingZone = [];
+    $normalized = [];
+
+    foreach ($rowsLowerAssoc as $row) {
+        $nr = $normalizeRateRow($row);
+        $normalized[] = $nr;
+
+        if ($nr['service'] === '' || $nr['zone'] === '' || $nr['weight'] === '' || $nr['price'] === '') {
+            return ['ok' => false, 'error' => 'service, zone, weight, price は必須です', 'normalized' => []];
+        }
+
+        $key = $nr['service'] . '|' . $nr['zone'] . '|' . $nr['weight'];
+        if (isset($seen[$key])) $duplicates[$key] = true;
+        $seen[$key] = true;
+        if (isset($existingKeys[$key])) $duplicates[$key] = true;
+
+        if (!isset($serviceNameToCarrier[$nr['service']])) {
+            $missingServices[$nr['service']] = true;
+            continue;
+        }
+
+        $carrier = $serviceNameToCarrier[$nr['service']];
+        if ($carrier === '' || !isset($carrierToZones[$carrier]) || !isset($carrierToZones[$carrier][$nr['zone']])) {
+            $missingZone[$carrier . '|' . $nr['zone']] = true;
+        }
+    }
+
+    if (!empty($duplicates)) {
+        $keys = array_keys($duplicates);
+        return ['ok' => false, 'error' => 'service,zone,weight が同じ組み合わせが存在します: ' . implode(', ', $keys), 'normalized' => []];
+    }
+    if (!empty($missingServices)) {
+        $names = array_keys($missingServices);
+        return ['ok' => false, 'error' => '存在しないサービスが含まれています（サービス管理に存在しない）: ' . implode(', ', $names), 'normalized' => []];
+    }
+    if (!empty($missingZone)) {
+        $pairs = array_keys($missingZone);
+        return ['ok' => false, 'error' => '存在しないゾーンが含まれています（キャリア別ゾーンに存在しない）: ' . implode(', ', $pairs), 'normalized' => []];
+    }
+
+    return ['ok' => true, 'error' => null, 'normalized' => $normalized];
+}
+
 // CSVファイル検証
 $handle = fopen($file['tmp_name'], 'r');
 if ($handle === false) {
@@ -302,8 +403,8 @@ if ($mode === 'append') {
         foreach ($r as $k => $v) $r[$k] = trim((string)$v);
 
         if ($type === 'rates') {
-            $r['service'] = $r['service'] ?? '';
-            $r['zone'] = $r['zone'] ?? '';
+            $r['service'] = trim((string)($r['service'] ?? ''));
+            $r['zone'] = trim((string)($r['zone'] ?? ''));
             $r['weight'] = isset($r['weight']) ? (string)((float)$r['weight']) : '';
             $r['price'] = isset($r['price']) ? (string)((int)$r['price']) : '';
         } elseif ($type === 'countries') {
@@ -339,8 +440,19 @@ if ($mode === 'append') {
         return '';
     };
 
-    // carrier_zones は「同一キー上書き」ではなく「重複を禁止」
-    if ($type === 'carrier_zones') {
+    // rates / carrier_zones は「同一キー上書き」ではなく「重複を禁止」
+    if ($type === 'rates') {
+        $v = validateRatesRows($uploadRows, $existingRows);
+        if (!$v['ok']) {
+            $response['error'] = $v['error'] ?: 'バリデーションエラー';
+            http_response_code(400);
+            echo json_encode($response, JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+        $mergedRows = [];
+        foreach ($existingRows as $r) $mergedRows[] = $normalizeRow($r);
+        foreach ($v['normalized'] as $nr) $mergedRows[] = $nr;
+    } elseif ($type === 'carrier_zones') {
         $v = validateCarrierZonesRows($uploadRows, $existingRows);
         if (!$v['ok']) {
             $response['error'] = $v['error'] ?: 'バリデーションエラー';
@@ -374,7 +486,7 @@ if ($mode === 'append') {
     $headersCanonical = $requiredHeaders;
     if (writeCSVWithHeaders($targetPath, $headersCanonical, $mergedRows)) {
         $response['success'] = true;
-        $response['message'] = $type === 'carrier_zones'
+        $response['message'] = ($type === 'carrier_zones' || $type === 'rates')
             ? "{$rowCount}件を追加しました"
             : "{$rowCount}件を追加（同一キーは上書き）しました";
         $response['count'] = $rowCount;
@@ -385,7 +497,24 @@ if ($mode === 'append') {
     }
 } else {
     // 全置換（従来通り）
-    if ($type === 'carrier_zones') {
+    if ($type === 'rates') {
+        [, $uploadRows] = readCSVLowerAssoc($file['tmp_name']);
+        $v = validateRatesRows($uploadRows, []); // 既存は無関係（全置換）
+        if (!$v['ok']) {
+            $response['error'] = $v['error'] ?: 'バリデーションエラー';
+            http_response_code(400);
+            echo json_encode($response, JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+        if (writeCSVWithHeaders($targetPath, $requiredHeaders, $v['normalized'])) {
+            $response['success'] = true;
+            $response['message'] = "{$rowCount}件のデータをアップロードしました";
+            $response['count'] = $rowCount;
+        } else {
+            $response['error'] = 'ファイルの書き込みに失敗しました';
+            http_response_code(500);
+        }
+    } elseif ($type === 'carrier_zones') {
         // carrier_zones は全置換でも内容検証する
         [, $uploadRows] = readCSVLowerAssoc($file['tmp_name']);
         $v = validateCarrierZonesRows($uploadRows, []); // 既存は無関係（全置換）

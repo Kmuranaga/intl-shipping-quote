@@ -303,11 +303,48 @@ async function addRate() {
     
     const price = prompt('料金 (円):');
     if (!price || isNaN(price)) return;
+
+    // クライアント側バリデーション（サーバ側でも必ず検証されます）
+    const serviceName = String(service).trim();
+    const serviceNames = new Set((editData.services || []).map(s => String(s?.name || '').trim()).filter(Boolean));
+    if (!serviceNames.has(serviceName)) {
+        showToast(`存在しないサービスです: ${serviceName}`, 'error');
+        return;
+    }
+
+    // service.name -> carrier
+    const serviceToCarrier = new Map((editData.services || [])
+        .map(s => [String(s?.name || '').trim(), normalizeCarrierInput(s?.carrier)])
+        .filter(([n, c]) => n && c));
+    const carrier = serviceToCarrier.get(serviceName) || '';
+    if (!carrier) {
+        showToast(`サービスのキャリアが未設定です: ${serviceName}`, 'error');
+        return;
+    }
+
+    const carrierZonesForCarrier = new Set((editData.carrier_zones || [])
+        .filter(r => normalizeCarrierInput(r?.carrier) === carrier)
+        .map(r => normalizeZoneInput(r?.zone))
+        .filter(Boolean));
+    if (!carrierZonesForCarrier.has(zoneStr)) {
+        showToast(`存在しないゾーンです（キャリア別ゾーンに存在しない）: ${carrier}|${zoneStr}`, 'error');
+        return;
+    }
+
+    const weightNorm = String(parseFloat(weight));
+    const dupKey = `${serviceName}|${zoneStr}|${weightNorm}`;
+    const existingKeys = new Set((editData.rates || []).map(r =>
+        `${String(r?.service || '').trim()}|${String(r?.zone || '').trim()}|${String(parseFloat(r?.weight))}`
+    ));
+    if (existingKeys.has(dupKey)) {
+        showToast(`service,zone,weight が同じ組み合わせが存在します: ${dupKey}`, 'error');
+        return;
+    }
     
     editData.rates.push({
-        service,
+        service: serviceName,
         zone: zoneStr,
-        weight: parseFloat(weight),
+        weight: parseFloat(weightNorm),
         price: parseInt(price)
     });
     
@@ -316,6 +353,50 @@ async function addRate() {
 }
 
 async function saveRates() {
+    // クライアント側バリデーション（サーバ側でも必ず検証されます）
+    const serviceNames = new Set((editData.services || []).map(s => String(s?.name || '').trim()).filter(Boolean));
+    const serviceToCarrier = new Map((editData.services || [])
+        .map(s => [String(s?.name || '').trim(), normalizeCarrierInput(s?.carrier)])
+        .filter(([n, c]) => n && c));
+    const carrierToZones = new Map();
+    (editData.carrier_zones || []).forEach(r => {
+        const c = normalizeCarrierInput(r?.carrier);
+        const z = normalizeZoneInput(r?.zone);
+        if (!c || !z) return;
+        if (!carrierToZones.has(c)) carrierToZones.set(c, new Set());
+        carrierToZones.get(c).add(z);
+    });
+
+    const dup = new Set();
+    const missingServices = new Set();
+    const missingZones = new Set();
+    const seen = new Set();
+    (editData.rates || []).forEach(r => {
+        const s = String(r?.service || '').trim();
+        const z = String(r?.zone || '').trim();
+        const w = String(parseFloat(r?.weight));
+        const key = `${s}|${z}|${w}`;
+        if (seen.has(key)) dup.add(key);
+        seen.add(key);
+        if (s && !serviceNames.has(s)) missingServices.add(s);
+        const carrier = serviceToCarrier.get(s) || '';
+        const zones = carrier ? carrierToZones.get(carrier) : null;
+        if (s && z && (!carrier || !zones || !zones.has(z))) missingZones.add(`${carrier}|${z}`);
+    });
+
+    if (dup.size) {
+        showToast(`service,zone,weight が同じ組み合わせが存在します: ${Array.from(dup).join(', ')}`, 'error');
+        return;
+    }
+    if (missingServices.size) {
+        showToast(`存在しないサービスが含まれています: ${Array.from(missingServices).join(', ')}`, 'error');
+        return;
+    }
+    if (missingZones.size) {
+        showToast(`存在しないゾーンが含まれています（キャリア別ゾーンに存在しない）: ${Array.from(missingZones).join(', ')}`, 'error');
+        return;
+    }
+
     await saveDataWithMessage('rates', editData.rates, '運賃データを保存しました');
 }
 

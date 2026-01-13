@@ -130,6 +130,102 @@ if ($data === null) {
 switch ($type) {
     case 'rates':
         $headers = ['service', 'zone', 'weight', 'price'];
+        // ---- バリデーション（存在しないサービスNG、存在しない国コード/ゾーンNG、service+zone+weight重複NG）----
+        $countries = readCSVAssoc(CSV_COUNTRIES);
+        $services = readCSVAssoc(CSV_SERVICES);
+        $carrierZones = readCSVAssoc(CSV_CARRIER_ZONES);
+
+        $validCountryCodes = [];
+        foreach ($countries as $c) {
+            $code = normalizeCountryCodeServer($c['code'] ?? '');
+            if ($code !== '') $validCountryCodes[$code] = true;
+        }
+
+        // service name -> carrierKey
+        $serviceNameToCarrier = [];
+        foreach ($services as $s) {
+            $name = trim((string)($s['name'] ?? ''));
+            $carrier = normalizeCarrierKeyServer($s['carrier'] ?? '');
+            if ($name !== '') $serviceNameToCarrier[$name] = $carrier;
+        }
+
+        // carrier -> zones(set)
+        $carrierToZones = [];
+        foreach ($carrierZones as $cz) {
+            $carrier = normalizeCarrierKeyServer($cz['carrier'] ?? '');
+            $countryCode = normalizeCountryCodeServer($cz['country_code'] ?? '');
+            $zone = isset($cz['zone']) ? trim((string)$cz['zone']) : '';
+            if ($carrier === '' || $countryCode === '' || $zone === '') continue;
+            // 国コードが存在しないものは zone の根拠として使わない
+            if (!isset($validCountryCodes[$countryCode])) continue;
+            if (!isset($carrierToZones[$carrier])) $carrierToZones[$carrier] = [];
+            $carrierToZones[$carrier][$zone] = true;
+        }
+
+        $seen = [];
+        $duplicates = [];
+        $missingServices = [];
+        $missingZone = [];
+
+        foreach ($data as $i => $row) {
+            $serviceName = trim((string)($row['service'] ?? ''));
+            $zone = isset($row['zone']) ? trim((string)$row['zone']) : '';
+            $weightRaw = $row['weight'] ?? '';
+            $weight = (string)((float)$weightRaw);
+            $price = isset($row['price']) ? (string)((int)$row['price']) : '';
+
+            $data[$i] = [
+                'service' => $serviceName,
+                'zone' => $zone,
+                'weight' => $weight,
+                'price' => $price
+            ];
+
+            if ($serviceName === '' || $zone === '' || $weight === '' || $price === '') {
+                $response['error'] = 'service, zone, weight, price は必須です';
+                http_response_code(400);
+                echo json_encode($response, JSON_UNESCAPED_UNICODE);
+                exit;
+            }
+
+            $key = $serviceName . '|' . $zone . '|' . $weight;
+            if (isset($seen[$key])) $duplicates[$key] = true;
+            $seen[$key] = true;
+
+            if (!isset($serviceNameToCarrier[$serviceName])) {
+                $missingServices[$serviceName] = true;
+                continue;
+            }
+
+            $carrier = $serviceNameToCarrier[$serviceName];
+            if ($carrier === '' || !isset($carrierToZones[$carrier]) || !isset($carrierToZones[$carrier][$zone])) {
+                // そのサービス（=carrier）に対して carrier_zones で成立しない zone はNG（=国コード/ゾーン不正）
+                $missingZone[$carrier . '|' . $zone] = true;
+            }
+        }
+
+        if (!empty($duplicates)) {
+            $keys = array_keys($duplicates);
+            $response['error'] = 'service,zone,weight が同じ組み合わせが存在します: ' . implode(', ', $keys);
+            http_response_code(400);
+            echo json_encode($response, JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+        if (!empty($missingServices)) {
+            $names = array_keys($missingServices);
+            $response['error'] = '存在しないサービスが含まれています（サービス管理に存在しない）: ' . implode(', ', $names);
+            http_response_code(400);
+            echo json_encode($response, JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+        if (!empty($missingZone)) {
+            $pairs = array_keys($missingZone);
+            $response['error'] = '存在しないゾーンが含まれています（キャリア別ゾーンに存在しない）: ' . implode(', ', $pairs);
+            http_response_code(400);
+            echo json_encode($response, JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
         if (writeCSV(CSV_RATES, $data, $headers)) {
             $response['success'] = true;
             $response['message'] = '運賃データを保存しました';
