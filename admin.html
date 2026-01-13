@@ -533,25 +533,6 @@
                     </div>
                     <div id="carrierZonesLookupResult" style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 0.75rem;"></div>
 
-                    <div class="card"
-                        style="margin: 0 0 1rem 0; border: 1px dashed rgba(255,255,255,0.12); background: rgba(255,255,255,0.03);">
-                        <div class="card-header" style="padding: 0.75rem 1rem;">
-                            <div class="card-title" style="font-size: 0.95rem;">
-                                不足マッピング（carrier × 国コード）
-                                <span class="badge" id="carrierZonesMissingCount">0件</span>
-                            </div>
-                            <div style="display:flex; gap:0.5rem; align-items:center;">
-                                <button class="btn-secondary" onclick="generateMissingCarrierZones()">+ 不足を追加（zone=TODO）</button>
-                            </div>
-                        </div>
-                        <div style="padding: 0 1rem 1rem 1rem;">
-                            <div id="carrierZonesMissingHelp" style="font-size: 0.8rem; color: var(--text-light); margin-bottom: 0.5rem;">
-                                services の carrier と countries の 国コードから全組み合わせを作り、carrier_zones に無いものを一覧します。
-                            </div>
-                            <div id="carrierZonesMissingList" style="font-size: 0.85rem; color: var(--text-light);"></div>
-                        </div>
-                    </div>
-
                     <div class="table-wrapper" style="max-height: 400px; overflow-y: auto;">
                         <table class="data-table">
                             <thead>

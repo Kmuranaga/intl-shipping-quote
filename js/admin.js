@@ -586,7 +586,6 @@ function renderCarrierZonesTable() {
         tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 2rem;">データがありません</td></tr>';
         countEl.textContent = '0件';
         updateCarrierZonesLookup();
-        renderMissingCarrierZones();
         return;
     }
 
@@ -613,7 +612,6 @@ function renderCarrierZonesTable() {
 
     countEl.textContent = `${filtered.length}件`;
     updateCarrierZonesLookup();
-    renderMissingCarrierZones();
 }
 
 function buildCarrierZoneKey(carrier, countryCode) {
@@ -707,50 +705,6 @@ function computeMissingCarrierZones() {
         });
     });
     return missing;
-}
-
-function renderMissingCarrierZones() {
-    const countEl = document.getElementById('carrierZonesMissingCount');
-    const listEl = document.getElementById('carrierZonesMissingList');
-    if (!countEl || !listEl) return;
-
-    const missing = computeMissingCarrierZones();
-    countEl.textContent = `${missing.length}件`;
-
-    if (missing.length === 0) {
-        listEl.textContent = '不足なし（100%埋まっています）';
-        return;
-    }
-
-    // 表示は多すぎると重いので先頭だけ
-    const head = missing.slice(0, 200);
-    const text = head.map(m => `${m.carrier}:${m.country_code}`).join(', ');
-    listEl.textContent = missing.length > head.length
-        ? `${text} …（他 ${missing.length - head.length} 件）`
-        : text;
-}
-
-async function generateMissingCarrierZones() {
-    const missing = computeMissingCarrierZones();
-    if (missing.length === 0) {
-        showToast('不足マッピングはありません', 'success');
-        return;
-    }
-    if (!confirm(`不足マッピングを ${missing.length} 件追加します（zone=TODO）\n後で一覧から zone を編集してください。`)) return;
-
-    const existingKeyAll = new Set((editData.carrier_zones || [])
-        .map(r => buildCarrierZoneKey(r?.carrier, r?.country_code))
-        .filter(Boolean));
-
-    missing.forEach(m => {
-        const key = buildCarrierZoneKey(m.carrier, m.country_code);
-        if (!key || existingKeyAll.has(key)) return;
-        existingKeyAll.add(key);
-        editData.carrier_zones.push({ carrier: m.carrier, country_code: m.country_code, zone: 'TODO' });
-    });
-
-    renderCarrierZonesTable();
-    await saveDataWithMessage('carrier_zones', editData.carrier_zones, '不足マッピングを追加しました');
 }
 
 function updateCarrierZonesLookup() {
