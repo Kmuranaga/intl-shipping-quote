@@ -560,6 +560,47 @@ function getCountryCodes() {
     return Array.from(codes).sort();
 }
 
+function validateCarrierZonesClient(rows, { allowExisting = true } = {}) {
+    const validCarriers = new Set(getServiceCarriers().map(normalizeCarrierInput));
+    const validCountryCodes = new Set(getCountryCodes().map(cc => String(cc).toUpperCase()));
+
+    const seen = new Set();
+    const duplicates = new Set();
+    const missingCarriers = new Set();
+    const missingCountries = new Set();
+
+    (rows || []).forEach(r => {
+        const carrier = normalizeCarrierInput(r?.carrier);
+        const countryCode = String(r?.country_code || '').trim().toUpperCase();
+        if (!carrier || !countryCode) return; // 必須チェックは別でやる
+
+        const key = `${carrier}|${countryCode}`;
+        if (seen.has(key)) duplicates.add(key);
+        seen.add(key);
+
+        if (allowExisting) {
+            const existingKeys = new Set((editData.carrier_zones || [])
+                .map(x => buildCarrierZoneKey(x?.carrier, x?.country_code))
+                .filter(Boolean));
+            if (existingKeys.has(key)) duplicates.add(key);
+        }
+
+        if (!validCarriers.has(carrier)) missingCarriers.add(carrier);
+        if (!validCountryCodes.has(countryCode)) missingCountries.add(countryCode);
+    });
+
+    if (duplicates.size) {
+        return { ok: false, error: `carrier,country_code が同じ組み合わせが存在します: ${Array.from(duplicates).join(', ')}` };
+    }
+    if (missingCountries.size) {
+        return { ok: false, error: `存在しない国コードが含まれています: ${Array.from(missingCountries).join(', ')}` };
+    }
+    if (missingCarriers.size) {
+        return { ok: false, error: `存在しないキャリアが含まれています: ${Array.from(missingCarriers).join(', ')}` };
+    }
+    return { ok: true, error: null };
+}
+
 function getExistingCarrierZoneKeySet() {
     const set = new Set();
     (editData.carrier_zones || []).forEach(r => {
@@ -673,6 +714,13 @@ async function addCarrierZone() {
     const zone = normalizeZoneInput(prompt('ゾーン (例: E / 1):'));
     if (!zone) return;
 
+    // クライアント側バリデーション（サーバ側でも必ず検証されます）
+    const v = validateCarrierZonesClient([{ carrier, country_code, zone }], { allowExisting: true });
+    if (!v.ok) {
+        showToast(v.error || 'バリデーションエラー', 'error');
+        return;
+    }
+
     editData.carrier_zones.push({ carrier, country_code, zone });
     renderCarrierZonesTable();
     await saveDataWithMessage('carrier_zones', editData.carrier_zones, '追加しました');
@@ -691,6 +739,30 @@ async function editCarrierZone(index) {
 
     const zone = normalizeZoneInput(prompt('ゾーン:', row.zone));
     if (zone === null) return;
+
+    // クライアント側バリデーション（自分自身は除外して重複チェック）
+    const next = { carrier, country_code, zone };
+    const others = (editData.carrier_zones || []).filter((_, i) => i !== index);
+    const validCarriers = new Set(getServiceCarriers().map(normalizeCarrierInput));
+    const validCountryCodes = new Set(getCountryCodes().map(cc => String(cc).toUpperCase()));
+    const key = buildCarrierZoneKey(next.carrier, next.country_code);
+    const otherKeys = new Set(others.map(r => buildCarrierZoneKey(r?.carrier, r?.country_code)).filter(Boolean));
+    if (!key) {
+        showToast('carrier と country_code は必須です', 'error');
+        return;
+    }
+    if (otherKeys.has(key)) {
+        showToast(`carrier,country_code が同じ組み合わせが存在します: ${key}`, 'error');
+        return;
+    }
+    if (!validCountryCodes.has(next.country_code)) {
+        showToast(`存在しない国コードが含まれています: ${next.country_code}`, 'error');
+        return;
+    }
+    if (!validCarriers.has(next.carrier)) {
+        showToast(`存在しないキャリアが含まれています: ${next.carrier}`, 'error');
+        return;
+    }
 
     editData.carrier_zones[index] = { carrier, country_code, zone };
     renderCarrierZonesTable();

@@ -137,6 +137,99 @@ function writeCSVWithHeaders($filepath, $headers, $rows) {
     return true;
 }
 
+function normalizeCarrierKeyServer($value) {
+    return strtolower(trim((string)($value ?? '')));
+}
+
+function normalizeCountryCodeServer($value) {
+    return strtoupper(trim((string)($value ?? '')));
+}
+
+/**
+ * carrier_zones の行を正規化して返す（必須キーは空文字になり得る）
+ * @return array{carrier:string,country_code:string,zone:string}
+ */
+function normalizeCarrierZonesRow($row) {
+    return [
+        'carrier' => normalizeCarrierKeyServer($row['carrier'] ?? ''),
+        'country_code' => normalizeCountryCodeServer($row['country_code'] ?? ''),
+        'zone' => trim((string)($row['zone'] ?? '')),
+    ];
+}
+
+/**
+ * carrier_zones バリデーション
+ * - carrier,country_code の重複（ファイル内/既存との重複）を禁止
+ * - 存在しない国コード/キャリアを禁止
+ * @param array<int, array<string,string>> $rowsLowerAssoc
+ * @param array<int, array<string,string>> $existingRowsLowerAssoc
+ * @return array{ok:bool,error:?string,normalized:array<int,array{carrier:string,country_code:string,zone:string}>}
+ */
+function validateCarrierZonesRows($rowsLowerAssoc, $existingRowsLowerAssoc) {
+    // 有効国コード
+    [, $countries] = readCSVLowerAssoc(CSV_COUNTRIES);
+    $validCountryCodes = [];
+    foreach ($countries as $c) {
+        $code = normalizeCountryCodeServer($c['code'] ?? '');
+        if ($code !== '') $validCountryCodes[$code] = true;
+    }
+
+    // 有効キャリア（services.csv の carrier）
+    [, $services] = readCSVLowerAssoc(CSV_SERVICES);
+    $validCarriers = [];
+    foreach ($services as $s) {
+        $carrier = normalizeCarrierKeyServer($s['carrier'] ?? '');
+        if ($carrier !== '') $validCarriers[$carrier] = true;
+    }
+
+    // 既存キー集合（carrier|country_code）
+    $existingKeys = [];
+    foreach ($existingRowsLowerAssoc as $r) {
+        $nr = normalizeCarrierZonesRow($r);
+        if ($nr['carrier'] === '' || $nr['country_code'] === '') continue;
+        $existingKeys[$nr['carrier'] . '|' . $nr['country_code']] = true;
+    }
+
+    $seen = [];
+    $duplicates = [];
+    $missingCountries = [];
+    $missingCarriers = [];
+    $normalized = [];
+
+    foreach ($rowsLowerAssoc as $row) {
+        $nr = normalizeCarrierZonesRow($row);
+        $normalized[] = $nr;
+
+        if ($nr['carrier'] === '' || $nr['country_code'] === '') {
+            return ['ok' => false, 'error' => 'carrier と country_code は必須です', 'normalized' => []];
+        }
+
+        $key = $nr['carrier'] . '|' . $nr['country_code'];
+        if (isset($seen[$key])) $duplicates[$key] = true;
+        $seen[$key] = true;
+
+        if (isset($existingKeys[$key])) $duplicates[$key] = true;
+
+        if (!isset($validCountryCodes[$nr['country_code']])) $missingCountries[$nr['country_code']] = true;
+        if (!isset($validCarriers[$nr['carrier']])) $missingCarriers[$nr['carrier']] = true;
+    }
+
+    if (!empty($duplicates)) {
+        $keys = array_keys($duplicates);
+        return ['ok' => false, 'error' => 'carrier,country_code が同じ組み合わせが存在します: ' . implode(', ', $keys), 'normalized' => []];
+    }
+    if (!empty($missingCountries)) {
+        $codes = array_keys($missingCountries);
+        return ['ok' => false, 'error' => '存在しない国コードが含まれています: ' . implode(', ', $codes), 'normalized' => []];
+    }
+    if (!empty($missingCarriers)) {
+        $carriers = array_keys($missingCarriers);
+        return ['ok' => false, 'error' => '存在しないキャリアが含まれています: ' . implode(', ', $carriers), 'normalized' => []];
+    }
+
+    return ['ok' => true, 'error' => null, 'normalized' => $normalized];
+}
+
 // CSVファイル検証
 $handle = fopen($file['tmp_name'], 'r');
 if ($handle === false) {
@@ -203,7 +296,6 @@ if ($mode === 'append') {
         [, $existingRows] = readCSVLowerAssoc($targetPath);
     }
 
-    $mergedMap = [];
     $normalizeRow = function($row) use ($type) {
         $r = $row;
         // 共通トリム
@@ -247,26 +339,44 @@ if ($mode === 'append') {
         return '';
     };
 
-    foreach ($existingRows as $r) {
-        $nr = $normalizeRow($r);
-        $k = $keyOf($nr);
-        if ($k === '') continue;
-        $mergedMap[$k] = $nr;
+    // carrier_zones は「同一キー上書き」ではなく「重複を禁止」
+    if ($type === 'carrier_zones') {
+        $v = validateCarrierZonesRows($uploadRows, $existingRows);
+        if (!$v['ok']) {
+            $response['error'] = $v['error'] ?: 'バリデーションエラー';
+            http_response_code(400);
+            echo json_encode($response, JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+        // 既存 + 追加（キー重複はvalidateで弾いている）
+        $mergedRows = [];
+        foreach ($existingRows as $r) $mergedRows[] = $normalizeRow($r);
+        foreach ($v['normalized'] as $nr) $mergedRows[] = $nr;
+    } else {
+        // 既存 + アップロードをマージ（同一キーはアップロード側で上書き）
+        $mergedMap = [];
+        foreach ($existingRows as $r) {
+            $nr = $normalizeRow($r);
+            $k = $keyOf($nr);
+            if ($k === '') continue;
+            $mergedMap[$k] = $nr;
+        }
+        foreach ($uploadRows as $r) {
+            $nr = $normalizeRow($r);
+            $k = $keyOf($nr);
+            if ($k === '') continue;
+            $mergedMap[$k] = $nr;
+        }
+        $mergedRows = array_values($mergedMap);
     }
-    foreach ($uploadRows as $r) {
-        $nr = $normalizeRow($r);
-        $k = $keyOf($nr);
-        if ($k === '') continue;
-        $mergedMap[$k] = $nr;
-    }
-
-    $mergedRows = array_values($mergedMap);
 
     // 書き込み（ヘッダーは必須カラム順）
     $headersCanonical = $requiredHeaders;
     if (writeCSVWithHeaders($targetPath, $headersCanonical, $mergedRows)) {
         $response['success'] = true;
-        $response['message'] = "{$rowCount}件を追加（同一キーは上書き）しました";
+        $response['message'] = $type === 'carrier_zones'
+            ? "{$rowCount}件を追加しました"
+            : "{$rowCount}件を追加（同一キーは上書き）しました";
         $response['count'] = $rowCount;
         $response['total'] = count($mergedRows);
     } else {
@@ -275,13 +385,33 @@ if ($mode === 'append') {
     }
 } else {
     // 全置換（従来通り）
-    if (move_uploaded_file($file['tmp_name'], $targetPath)) {
-        $response['success'] = true;
-        $response['message'] = "{$rowCount}件のデータをアップロードしました";
-        $response['count'] = $rowCount;
+    if ($type === 'carrier_zones') {
+        // carrier_zones は全置換でも内容検証する
+        [, $uploadRows] = readCSVLowerAssoc($file['tmp_name']);
+        $v = validateCarrierZonesRows($uploadRows, []); // 既存は無関係（全置換）
+        if (!$v['ok']) {
+            $response['error'] = $v['error'] ?: 'バリデーションエラー';
+            http_response_code(400);
+            echo json_encode($response, JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+        if (writeCSVWithHeaders($targetPath, $requiredHeaders, $v['normalized'])) {
+            $response['success'] = true;
+            $response['message'] = "{$rowCount}件のデータをアップロードしました";
+            $response['count'] = $rowCount;
+        } else {
+            $response['error'] = 'ファイルの書き込みに失敗しました';
+            http_response_code(500);
+        }
     } else {
-        $response['error'] = 'ファイルの保存に失敗しました';
-        http_response_code(500);
+        if (move_uploaded_file($file['tmp_name'], $targetPath)) {
+            $response['success'] = true;
+            $response['message'] = "{$rowCount}件のデータをアップロードしました";
+            $response['count'] = $rowCount;
+        } else {
+            $response['error'] = 'ファイルの保存に失敗しました';
+            http_response_code(500);
+        }
     }
 }
 

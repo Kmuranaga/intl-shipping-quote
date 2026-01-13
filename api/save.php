@@ -72,6 +72,48 @@ function writeCSV($filepath, $data, $headers) {
     return true;
 }
 
+/**
+ * CSVファイルを読み込んで配列で返す（BOM除去、trim付き）
+ */
+function readCSVAssoc($filepath) {
+    if (!file_exists($filepath)) return [];
+    $handle = fopen($filepath, 'r');
+    if ($handle === false) return [];
+
+    // BOM除去
+    $bom = fread($handle, 3);
+    if ($bom !== "\xEF\xBB\xBF") rewind($handle);
+
+    $headers = fgetcsv($handle);
+    if ($headers === false) {
+        fclose($handle);
+        return [];
+    }
+    $headers = array_map(function($h) {
+        return trim((string)$h);
+    }, $headers);
+
+    $rows = [];
+    while (($row = fgetcsv($handle)) !== false) {
+        if (count($row) !== count($headers)) continue;
+        $item = [];
+        foreach ($headers as $i => $h) {
+            $item[$h] = trim((string)$row[$i]);
+        }
+        $rows[] = $item;
+    }
+    fclose($handle);
+    return $rows;
+}
+
+function normalizeCarrierKeyServer($value) {
+    return strtolower(trim((string)($value ?? '')));
+}
+
+function normalizeCountryCodeServer($value) {
+    return strtoupper(trim((string)($value ?? '')));
+}
+
 // JSONデータ取得
 $input = json_decode(file_get_contents('php://input'), true);
 
@@ -121,6 +163,82 @@ switch ($type) {
 
     case 'carrier_zones':
         $headers = ['carrier', 'country_code', 'zone'];
+        // ---- バリデーション（carrier+country_codeの重複禁止、存在しない国/キャリア禁止）----
+        $countries = readCSVAssoc(CSV_COUNTRIES);
+        $services = readCSVAssoc(CSV_SERVICES);
+
+        $validCountryCodes = [];
+        foreach ($countries as $c) {
+            $code = normalizeCountryCodeServer($c['code'] ?? '');
+            if ($code !== '') $validCountryCodes[$code] = true;
+        }
+        $validCarriers = [];
+        foreach ($services as $s) {
+            $carrier = normalizeCarrierKeyServer($s['carrier'] ?? '');
+            if ($carrier !== '') $validCarriers[$carrier] = true;
+        }
+
+        $seen = [];
+        $duplicates = [];
+        $missingCountries = [];
+        $missingCarriers = [];
+
+        // 正規化しつつ検証
+        foreach ($data as $i => $row) {
+            $carrier = normalizeCarrierKeyServer($row['carrier'] ?? '');
+            $countryCode = normalizeCountryCodeServer($row['country_code'] ?? '');
+            $zone = isset($row['zone']) ? trim((string)$row['zone']) : '';
+
+            $data[$i] = [
+                'carrier' => $carrier,
+                'country_code' => $countryCode,
+                'zone' => $zone
+            ];
+
+            if ($carrier === '' || $countryCode === '') {
+                $response['error'] = 'carrier と country_code は必須です';
+                http_response_code(400);
+                echo json_encode($response, JSON_UNESCAPED_UNICODE);
+                exit;
+            }
+
+            $key = $carrier . '|' . $countryCode;
+            if (isset($seen[$key])) {
+                $duplicates[$key] = true;
+            } else {
+                $seen[$key] = true;
+            }
+
+            if (!isset($validCountryCodes[$countryCode])) {
+                $missingCountries[$countryCode] = true;
+            }
+            if (!isset($validCarriers[$carrier])) {
+                $missingCarriers[$carrier] = true;
+            }
+        }
+
+        if (!empty($duplicates)) {
+            $keys = array_keys($duplicates);
+            $response['error'] = 'carrier,country_code が同じ組み合わせが存在します: ' . implode(', ', $keys);
+            http_response_code(400);
+            echo json_encode($response, JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+        if (!empty($missingCountries)) {
+            $codes = array_keys($missingCountries);
+            $response['error'] = '存在しない国コードが含まれています: ' . implode(', ', $codes);
+            http_response_code(400);
+            echo json_encode($response, JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+        if (!empty($missingCarriers)) {
+            $carriers = array_keys($missingCarriers);
+            $response['error'] = '存在しないキャリアが含まれています: ' . implode(', ', $carriers);
+            http_response_code(400);
+            echo json_encode($response, JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
         if (writeCSV(CSV_CARRIER_ZONES, $data, $headers)) {
             $response['success'] = true;
             $response['message'] = 'キャリア別ゾーンマッピングを保存しました';
