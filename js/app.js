@@ -236,13 +236,13 @@ function calculate() {
         showToast(msgParts.join(' / '), 'error');
     }
 
-    const resultsHtml = services.map(service => {
+    const items = services.map((service, idx) => {
         const carrier = getCarrierKeyFromService(service);
         const zone = getZoneForService(service, selectedCountry);
         const carrierClass = getCarrierClass(service);
 
         if (!carrier) {
-            return `
+            return { idx, hasPrice: false, price: null, html: `
                 <div class="result-card ${carrierClass}">
                     <div class="carrier-logo" style="background: ${service.color}">${service.name.split(' ')[0]}</div>
                     <div class="result-info">
@@ -253,11 +253,11 @@ function calculate() {
                         <div class="no-service">キャリア未設定</div>
                     </div>
                 </div>
-            `;
+            ` };
         }
 
         if (!zone) {
-            return `
+            return { idx, hasPrice: false, price: null, html: `
                 <div class="result-card ${carrierClass}">
                     <div class="carrier-logo" style="background: ${service.color}">${service.name.split(' ')[0]}</div>
                     <div class="result-info">
@@ -268,13 +268,13 @@ function calculate() {
                         <div class="no-service">ゾーン未設定（carrier_zones）</div>
                     </div>
                 </div>
-            `;
+            ` };
         }
 
         const rate = findRate(service.name, zone, appliedWeight);
         
         if (rate) {
-            return `
+            return { idx, hasPrice: true, price: rate.price, html: `
                 <div class="result-card ${carrierClass}">
                     <div class="carrier-logo" style="background: ${service.color}">${service.name.split(' ')[0]}</div>
                     <div class="result-info">
@@ -286,9 +286,9 @@ function calculate() {
                         <div class="price-unit">燃油込</div>
                     </div>
                 </div>
-            `;
+            ` };
         } else {
-            return `
+            return { idx, hasPrice: false, price: null, html: `
                 <div class="result-card ${carrierClass}">
                     <div class="carrier-logo" style="background: ${service.color}">${service.name.split(' ')[0]}</div>
                     <div class="result-info">
@@ -299,9 +299,21 @@ function calculate() {
                         <div class="no-service">取扱なし</div>
                     </div>
                 </div>
-            `;
+            ` };
         }
-    }).join('');
+    });
+
+    // 価格が出るものを上に、価格の安い順に並べる（価格なしは後ろ）
+    items.sort((a, b) => {
+        if (a.hasPrice && b.hasPrice) {
+            return (a.price - b.price) || (a.idx - b.idx);
+        }
+        if (a.hasPrice) return -1;
+        if (b.hasPrice) return 1;
+        return a.idx - b.idx;
+    });
+
+    const resultsHtml = items.map(x => x.html).join('');
 
     document.getElementById('resultsGrid').innerHTML = resultsHtml;
     document.getElementById('noResults').style.display = 'none';
