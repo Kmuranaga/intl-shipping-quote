@@ -58,6 +58,9 @@ let editData = {
     settings: {}
 };
 
+// Toastの自動消去タイマー
+let toastTimerId = null;
+
 // ==========================================
 // services: carrier 正規化（carrier必須）
 // ==========================================
@@ -1010,14 +1013,36 @@ function downloadCurrentData(type) {
 
 function showToast(message, type = '') {
     const toast = document.getElementById('toast');
+    // 既存タイマーを解除
+    if (toastTimerId) {
+        clearTimeout(toastTimerId);
+        toastTimerId = null;
+    }
+
+    // XSS回避のため textContent で表示
     toast.textContent = message;
     toast.className = 'toast';
     if (type) toast.classList.add(type);
+    if (type === 'error') toast.classList.add('sticky');
     toast.classList.add('visible');
-    
-    setTimeout(() => {
+
+    // 閉じるボタン（クリックで消せる）
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'toast-close';
+    closeBtn.textContent = '×';
+    closeBtn.addEventListener('click', () => {
         toast.classList.remove('visible');
-    }, 3000);
+    });
+    toast.appendChild(closeBtn);
+
+    // エラー以外は自動で消す
+    if (type !== 'error') {
+        toastTimerId = setTimeout(() => {
+            toast.classList.remove('visible');
+            toastTimerId = null;
+        }, 3000);
+    }
 }
 
 // ==========================================
