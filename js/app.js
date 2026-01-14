@@ -202,6 +202,11 @@ function parseCountryCodes(value) {
     return Array.from(new Set(parts));
 }
 
+function isTruthyFlag(value) {
+    const v = String(value ?? '').trim().toLowerCase();
+    return v === '1' || v === 'true' || v === 'yes' || v === 'on';
+}
+
 function isServiceAvailableForCountry(service, country) {
     const codes = parseCountryCodes(service?.country_codes);
     if (codes.length === 0) return true;
@@ -259,6 +264,8 @@ function calculate() {
         const zone = getZoneForService(service, selectedCountry);
         const carrierClass = getCarrierClass(service);
         const available = isServiceAvailableForCountry(service, selectedCountry);
+        const useActualWeight = isTruthyFlag(service?.use_actual_weight);
+        const appliedWeightForService = useActualWeight ? weight : appliedWeight;
 
         if (!carrier) {
             return { idx, hasPrice: false, price: null, html: `
@@ -305,7 +312,7 @@ function calculate() {
             ` };
         }
 
-        const rate = findRate(service.name, zone, appliedWeight);
+        const rate = findRate(service.name, zone, appliedWeightForService);
         
         if (rate) {
             return { idx, hasPrice: true, price: rate.price, html: `
@@ -313,7 +320,7 @@ function calculate() {
                     <div class="carrier-logo" style="background: ${service.color}">${service.name.split(' ')[0]}</div>
                     <div class="result-info">
                         <h3>${service.name}</h3>
-                        <p>${service.description}</p>
+                        <p>${service.description}${useActualWeight ? '（実重量計算）' : ''}</p>
                     </div>
                     <div class="result-price">
                         <div class="price-value">¥${rate.price.toLocaleString()}</div>

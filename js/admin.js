@@ -80,6 +80,11 @@ function normalizeCountryCodes(value) {
     return Array.from(new Set(parts)).join(',');
 }
 
+function normalizeBoolFlag(value) {
+    const v = String(value ?? '').trim().toLowerCase();
+    return (v === '1' || v === 'true' || v === 'yes' || v === 'on') ? 1 : 0;
+}
+
 function normalizeServiceRow(service) {
     const s = service || {};
     const id = String(s.id ?? '').trim();
@@ -90,7 +95,8 @@ function normalizeServiceRow(service) {
         carrier,
         color: String(s.color ?? '').trim(),
         description: String(s.description ?? '').trim(),
-        country_codes: normalizeCountryCodes(s.country_codes)
+        country_codes: normalizeCountryCodes(s.country_codes),
+        use_actual_weight: normalizeBoolFlag(s.use_actual_weight)
     };
 }
 
@@ -435,6 +441,7 @@ function renderServicesList() {
                     <strong>
                         ${service.name}
                         ${service.country_codes ? `<span class="badge">適用国: ${service.country_codes}</span>` : ''}
+                        ${service.use_actual_weight ? `<span class="badge">実重量計算</span>` : ''}
                     </strong>
                     <div style="font-size: 0.8rem; color: var(--text-light);">${service.description}</div>
                     <div style="font-size: 0.75rem; color: var(--text-light);">キャリア: ${service.carrier || '(未設定)'}</div>
@@ -470,7 +477,11 @@ async function editService(index) {
     const country_codes = prompt('適用国コード（カンマ区切り。空=制限なし）:', service.country_codes || '');
     if (country_codes === null) return;
     
-    editData.services[index] = normalizeServiceRow({ ...service, name, carrier, description, color, country_codes });
+    const useActual = confirm(
+        `実重量で計算しますか？\nOK=ON / キャンセル=OFF\n（現在: ${service.use_actual_weight ? 'ON' : 'OFF'}）`
+    );
+    
+    editData.services[index] = normalizeServiceRow({ ...service, name, carrier, description, color, country_codes, use_actual_weight: useActual ? 1 : 0 });
     renderServicesList();
     await saveDataWithMessage('services', editData.services, '変更しました');
 }
@@ -506,7 +517,9 @@ async function addService() {
     const country_codes = prompt('適用国コード（カンマ区切り。空=制限なし）:', '');
     if (country_codes === null) return;
     
-    editData.services.push(normalizeServiceRow({ id, name, carrier, description, color, country_codes }));
+    const useActual = confirm('実重量で計算しますか？\nOK=ON / キャンセル=OFF');
+    
+    editData.services.push(normalizeServiceRow({ id, name, carrier, description, color, country_codes, use_actual_weight: useActual ? 1 : 0 }));
     renderServicesList();
     await saveDataWithMessage('services', editData.services, '追加しました');
 }
@@ -1001,9 +1014,9 @@ function downloadCurrentData(type) {
             filename = 'countries_backup.csv';
             break;
         case 'services':
-            content = 'id,name,carrier,color,description,country_codes\n';
+            content = 'id,name,carrier,color,description,country_codes,use_actual_weight\n';
             content += editData.services.map(s => 
-                `${s.id},${s.name},${s.carrier || ''},${s.color},${s.description},${s.country_codes || ''}`
+                `${s.id},${s.name},${s.carrier || ''},${s.color},${s.description},${s.country_codes || ''},${s.use_actual_weight ? 1 : 0}`
             ).join('\n');
             filename = 'services_backup.csv';
             break;

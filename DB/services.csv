@@ -1,6 +1,6 @@
-﻿id,name,carrier,color,description,country_codes
-fedex_ficp,"FedEx FICP",fedex,#4d148c,"FedEx International Connect Plus",US
-fedex_ip,"FedEx IP",fedex,#ff6600,"FedEx International Priority",
-dhl,DHL,dhl,#d40511,"DHL Express Worldwide",
-ups,UPS,ups,#351c15,"UPS Worldwide Express",
-ems,EMS,ems,#003399,国際スピード郵便,
+﻿id,name,carrier,color,description,country_codes,use_actual_weight
+fedex_ficp,"FedEx FICP",fedex,#4d148c,"FedEx International Connect Plus",US,0
+fedex_ip,"FedEx IP",fedex,#ff6600,"FedEx International Priority",,0
+dhl,DHL,dhl,#d40511,"DHL Express Worldwide",,0
+ups,UPS,ups,#351c15,"UPS Worldwide Express",,0
+ems,EMS,ems,#003399,国際スピード郵便,,0
