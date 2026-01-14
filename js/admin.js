@@ -69,6 +69,17 @@ function normalizeCarrierKey(value) {
     return String(value ?? '').trim().toLowerCase();
 }
 
+function normalizeCountryCodes(value) {
+    // "US,CA MX" -> "US,CA,MX"（空は制限なし）
+    const raw = String(value ?? '').trim();
+    if (!raw) return '';
+    const parts = raw
+        .split(/[,|\s]+/)
+        .map(s => String(s || '').trim().toUpperCase())
+        .filter(Boolean);
+    return Array.from(new Set(parts)).join(',');
+}
+
 function normalizeServiceRow(service) {
     const s = service || {};
     const id = String(s.id ?? '').trim();
@@ -78,7 +89,8 @@ function normalizeServiceRow(service) {
         name: String(s.name ?? '').trim(),
         carrier,
         color: String(s.color ?? '').trim(),
-        description: String(s.description ?? '').trim()
+        description: String(s.description ?? '').trim(),
+        country_codes: normalizeCountryCodes(s.country_codes)
     };
 }
 
@@ -420,7 +432,10 @@ function renderServicesList() {
             <div class="service-item-info">
                 <div class="service-color" style="background: ${service.color}"></div>
                 <div>
-                    <strong>${service.name}</strong>
+                    <strong>
+                        ${service.name}
+                        ${service.country_codes ? `<span class="badge">適用国: ${service.country_codes}</span>` : ''}
+                    </strong>
                     <div style="font-size: 0.8rem; color: var(--text-light);">${service.description}</div>
                     <div style="font-size: 0.75rem; color: var(--text-light);">キャリア: ${service.carrier || '(未設定)'}</div>
                 </div>
@@ -451,8 +466,11 @@ async function editService(index) {
     
     const color = prompt('色 (HEX):', service.color);
     if (color === null) return;
+
+    const country_codes = prompt('適用国コード（カンマ区切り。空=制限なし）:', service.country_codes || '');
+    if (country_codes === null) return;
     
-    editData.services[index] = normalizeServiceRow({ ...service, name, carrier, description, color });
+    editData.services[index] = normalizeServiceRow({ ...service, name, carrier, description, color, country_codes });
     renderServicesList();
     await saveDataWithMessage('services', editData.services, '変更しました');
 }
@@ -484,8 +502,11 @@ async function addService() {
     
     const color = prompt('色 (HEX):', '#333333');
     if (!color) return;
+
+    const country_codes = prompt('適用国コード（カンマ区切り。空=制限なし）:', '');
+    if (country_codes === null) return;
     
-    editData.services.push(normalizeServiceRow({ id, name, carrier, description, color }));
+    editData.services.push(normalizeServiceRow({ id, name, carrier, description, color, country_codes }));
     renderServicesList();
     await saveDataWithMessage('services', editData.services, '追加しました');
 }
@@ -980,9 +1001,9 @@ function downloadCurrentData(type) {
             filename = 'countries_backup.csv';
             break;
         case 'services':
-            content = 'id,name,carrier,color,description\n';
+            content = 'id,name,carrier,color,description,country_codes\n';
             content += editData.services.map(s => 
-                `${s.id},${s.name},${s.carrier || ''},${s.color},${s.description}`
+                `${s.id},${s.name},${s.carrier || ''},${s.color},${s.description},${s.country_codes || ''}`
             ).join('\n');
             filename = 'services_backup.csv';
             break;

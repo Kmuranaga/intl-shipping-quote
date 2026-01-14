@@ -191,6 +191,24 @@ function roundUpToHalf(value) {
     return Math.ceil(value * 2) / 2;
 }
 
+function parseCountryCodes(value) {
+    // "US,CA MX" -> ["US","CA","MX"]
+    const raw = String(value ?? '').trim();
+    if (!raw) return [];
+    const parts = raw
+        .split(/[,|\s]+/)
+        .map(s => String(s || '').trim().toUpperCase())
+        .filter(Boolean);
+    return Array.from(new Set(parts));
+}
+
+function isServiceAvailableForCountry(service, country) {
+    const codes = parseCountryCodes(service?.country_codes);
+    if (codes.length === 0) return true;
+    const cc = String(country?.code || '').trim().toUpperCase();
+    return codes.includes(cc);
+}
+
 function calculate() {
     if (!selectedCountry) {
         showToast('仕向国を選択してください', 'error');
@@ -240,6 +258,7 @@ function calculate() {
         const carrier = getCarrierKeyFromService(service);
         const zone = getZoneForService(service, selectedCountry);
         const carrierClass = getCarrierClass(service);
+        const available = isServiceAvailableForCountry(service, selectedCountry);
 
         if (!carrier) {
             return { idx, hasPrice: false, price: null, html: `
@@ -251,6 +270,21 @@ function calculate() {
                     </div>
                     <div class="result-price">
                         <div class="no-service">キャリア未設定</div>
+                    </div>
+                </div>
+            ` };
+        }
+
+        if (!available) {
+            return { idx, hasPrice: false, price: null, html: `
+                <div class="result-card ${carrierClass}">
+                    <div class="carrier-logo" style="background: ${service.color}">${service.name.split(' ')[0]}</div>
+                    <div class="result-info">
+                        <h3>${service.name}</h3>
+                        <p>${service.description}</p>
+                    </div>
+                    <div class="result-price">
+                        <div class="no-service">取扱なし</div>
                     </div>
                 </div>
             ` };

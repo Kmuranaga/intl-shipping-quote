@@ -236,7 +236,7 @@ switch ($type) {
         break;
         
     case 'services':
-        $headers = ['id', 'name', 'carrier', 'color', 'description'];
+        $headers = ['id', 'name', 'carrier', 'color', 'description', 'country_codes'];
         if (writeCSV(CSV_SERVICES, $data, $headers)) {
             $response['success'] = true;
             $response['message'] = 'サービス情報を保存しました';

@@ -66,7 +66,7 @@ switch ($type) {
         break;
     case 'services':
         $targetPath = CSV_SERVICES;
-        $requiredHeaders = ['id', 'name', 'carrier', 'color', 'description'];
+        $requiredHeaders = ['id', 'name', 'carrier', 'color', 'description', 'country_codes'];
         break;
     case 'countries':
         $targetPath = CSV_COUNTRIES;
@@ -416,6 +416,8 @@ if ($mode === 'append') {
             $r['carrier'] = strtolower($r['carrier'] ?? '');
             $r['color'] = $r['color'] ?? '';
             $r['description'] = $r['description'] ?? '';
+            // 国コードはカンマ区切り想定。ここでは大文字化のみ（詳細な整形はフロント側で実施）
+            $r['country_codes'] = strtoupper($r['country_codes'] ?? '');
         } elseif ($type === 'carrier_zones') {
             $r['carrier'] = strtolower($r['carrier'] ?? '');
             $r['country_code'] = strtoupper($r['country_code'] ?? '');
