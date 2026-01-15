@@ -1,0 +1,4 @@
+﻿key,label,length_cm,width_cm,height_cm,comment,sort
+s,Sサイズ,25,20,15,書籍・小物に最適,1
+m,Mサイズ,40,30,25,衣類・雑貨向け,2
+l,Lサイズ,60,45,35,家電・大型商品に,3

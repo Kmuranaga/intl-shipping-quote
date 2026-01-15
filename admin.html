@@ -401,6 +401,7 @@
                 <button class="admin-tab" data-tab="services">サービス管理</button>
                 <button class="admin-tab" data-tab="countries">国管理</button>
                 <button class="admin-tab" data-tab="carrier_zones">キャリア別ゾーン</button>
+                <button class="admin-tab" data-tab="boxes">箱サイズ</button>
                 <button class="admin-tab" data-tab="settings">サイト設定</button>
             </div>
 
@@ -594,11 +595,93 @@
                         <label class="form-label">フッターテキスト</label>
                         <input type="text" class="form-input" id="settingFooter">
                     </div>
+<hr style="border: 0; border-top: 1px solid rgba(0,0,0,0.08); margin: 1.25rem 0;">
+
+<div class="card-header" style="padding: 0; margin-bottom: 0.75rem;">
+    <div class="card-title" style="font-size: 1rem;">箱ガイド表示設定（箱の物理サイズ→表示サイズ）</div>
+</div>
+<p style="font-size: 0.85rem; color: var(--text-light); margin: 0 0 1rem;">
+    箱サイズが追加されても表示が極端に変わらないよう、最大辺(cm)を基準に表示pxへ換算します。最小/最大pxで暴れを抑え、倍率(%)で全体を微調整できます。
+</p>
+
+<div style="display: grid; grid-template-columns: repeat(2, minmax(220px, 1fr)); gap: 0.75rem;">
+    <div class="form-group" style="margin-bottom: 0;">
+        <label class="form-label">基準(cm)</label>
+        <div class="size-group">
+            <input type="number" class="form-input" id="settingBoxGuideRefCm" step="1" min="1" placeholder="例: 60">
+            <span class="size-unit">cm</span>
+        </div>
+    </div>
+    <div class="form-group" style="margin-bottom: 0;">
+        <label class="form-label">基準(px)</label>
+        <div class="size-group">
+            <input type="number" class="form-input" id="settingBoxGuideRefPx" step="1" min="1" placeholder="例: 90">
+            <span class="size-unit">px</span>
+        </div>
+    </div>
+    <div class="form-group" style="margin-bottom: 0;">
+        <label class="form-label">最小(px)</label>
+        <div class="size-group">
+            <input type="number" class="form-input" id="settingBoxGuideMinPx" step="1" min="1" placeholder="例: 50">
+            <span class="size-unit">px</span>
+        </div>
+    </div>
+    <div class="form-group" style="margin-bottom: 0;">
+        <label class="form-label">最大(px)</label>
+        <div class="size-group">
+            <input type="number" class="form-input" id="settingBoxGuideMaxPx" step="1" min="1" placeholder="例: 110">
+            <span class="size-unit">px</span>
+        </div>
+    </div>
+    <div class="form-group" style="margin-bottom: 0;">
+        <label class="form-label">倍率</label>
+        <div class="size-group">
+            <input type="number" class="form-input" id="settingBoxGuideScalePct" step="5" min="50" max="200"
+                placeholder="例: 100">
+            <span class="size-unit">%</span>
+        </div>
+    </div>
+</div>
+
                     <div class="action-bar">
                         <button class="btn-success" onclick="saveSettings()">設定を保存</button>
                     </div>
                 </div>
             </div>
+<!-- 箱サイズタブ -->
+<div class="tab-content" id="tab-boxes">
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">箱サイズ設定 <span class="badge" id="boxesCount">0件</span></div>
+            <div>
+                <button class="btn-secondary" onclick="addBox()">+ 追加</button>
+            </div>
+        </div>
+        <div class="table-wrapper" style="max-height: 420px; overflow-y: auto;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>キー</th>
+                        <th>表示名</th>
+                        <th>縦(cm)</th>
+                        <th>横(cm)</th>
+                        <th>高(cm)</th>
+                        <th>コメント</th>
+                        <th>並び順</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="boxesTableBody"></tbody>
+            </table>
+        </div>
+        <div class="action-bar">
+            <button class="btn-success" onclick="saveBoxes()">箱サイズを保存</button>
+        </div>
+        <p style="font-size: 0.8rem; color: var(--text-light); margin-top: 0.75rem;">
+            表示側は「並び順（小→大）」でソートされます。
+        </p>
+    </div>
+</div>
         </div>
     </div>
 

@@ -31,6 +31,7 @@ define('CSV_SERVICES', DB_PATH . 'services.csv');
 define('CSV_COUNTRIES', DB_PATH . 'countries.csv');
 define('CSV_CARRIER_ZONES', DB_PATH . 'carrier_zones.csv');
 define('CSV_SETTINGS', DB_PATH . 'settings.csv');
+define('CSV_BOXES', DB_PATH . 'boxes.csv');
 define('CSV_AUTH', DB_PATH . 'auth.csv');
 
 // セキュリティ設定

@@ -294,6 +294,150 @@
             .carrier-logo { margin: 0 auto; }
             .result-price { text-align: center; }
         }
+
+        /* ==================== */
+        /* 箱サイズガイド */
+        /* ==================== */
+
+        .size-guide {
+            background: linear-gradient(135deg, rgba(26, 54, 93, 0.03) 0%, rgba(44, 82, 130, 0.06) 100%);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .size-boxes {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 3.5rem;
+            flex-wrap: wrap;
+            padding: 1.5rem 0 0;
+        }
+
+        /* 5件以上のときはJSで align-left を付与して左寄せにする */
+        .size-boxes.align-left {
+            justify-content: flex-start;
+        }
+
+        .size-box-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 200px;
+        }
+
+        .cube-wrapper {
+            perspective: 600px;
+            margin-bottom: 1.25rem;
+        }
+
+        .cube-box {
+            position: relative;
+            transform-style: preserve-3d;
+            transform: rotateX(-20deg) rotateY(-30deg);
+            width: var(--cube-size);
+            height: var(--cube-size);
+        }
+
+        .cube-face {
+            position: absolute;
+            border: 3px solid #8b6914;
+            box-sizing: border-box;
+        }
+
+        .cube-front {
+            background: linear-gradient(145deg, #c4a36b 0%, #b8956a 100%);
+            width: var(--cube-size);
+            height: var(--cube-size);
+        }
+
+        .cube-top {
+            background: linear-gradient(145deg, #d4b87a 0%, #c9a870 100%);
+            width: var(--cube-size);
+            height: var(--cube-size);
+            top: 0;
+            left: 0;
+            margin-top: calc(var(--cube-size) * -1);
+            transform-origin: bottom;
+            transform: rotateX(90deg);
+        }
+
+        .cube-right {
+            background: linear-gradient(145deg, #a68a50 0%, #9a7b3c 100%);
+            width: var(--cube-size);
+            height: var(--cube-size);
+            top: 0;
+            left: var(--cube-size);
+            transform-origin: left;
+            transform: rotateY(90deg);
+        }
+
+        .tape-front-v {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            top: 0;
+            bottom: 0;
+            width: var(--tape-size);
+            background: linear-gradient(90deg, #9a7b3c 0%, #c9a870 50%, #9a7b3c 100%);
+            border-left: 2px solid #8b6914;
+            border-right: 2px solid #8b6914;
+        }
+
+        .tape-top-v {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            top: 0;
+            bottom: 0;
+            width: var(--tape-size);
+            background: linear-gradient(90deg, #b8956a 0%, #d4b87a 50%, #b8956a 100%);
+            border-left: 2px solid #8b6914;
+            border-right: 2px solid #8b6914;
+        }
+
+        .tape-top-h {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            left: 0;
+            right: 0;
+            height: var(--tape-size);
+            background: linear-gradient(180deg, #b8956a 0%, #d4b87a 50%, #b8956a 100%);
+            border-top: 2px solid #8b6914;
+            border-bottom: 2px solid #8b6914;
+        }
+
+        .size-label {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            padding: 0.5rem 1.2rem;
+            border-radius: 999px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            box-shadow: 0 2px 8px rgba(26, 54, 93, 0.25);
+        }
+
+        .size-dimensions {
+            font-size: 0.85rem;
+            color: var(--text);
+            font-weight: 600;
+        }
+
+        .size-comment {
+            font-size: 0.78rem;
+            color: var(--text-light);
+            margin-top: 0.4rem;
+            text-align: center;
+            max-width: 240px;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 600px) {
+            .size-boxes { gap: 2.25rem; }
+            .size-box-item { min-width: 160px; }
+        }
     </style>
 </head>
 <body>
@@ -388,6 +532,20 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
                     </svg>
                     <p>配送情報を入力して<br>「送料を計算する」をクリックしてください</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 class="card-title">
+                <span aria-hidden="true">📦</span>
+                梱包サイズの目安
+            </h2>
+            <div class="size-guide">
+                <div class="size-boxes" id="boxSizeGuide">
+                    <div style="text-align: center; padding: 1.5rem; color: var(--text-light); font-size: 0.9rem;">
+                        箱サイズ情報を読み込み中...
+                    </div>
                 </div>
             </div>
         </div>

@@ -358,6 +358,64 @@ switch ($type) {
             http_response_code(500);
         }
         break;
+
+    case 'boxes':
+        $headers = ['key', 'label', 'length_cm', 'width_cm', 'height_cm', 'comment', 'sort'];
+
+        // key重複禁止（小文字で判定）、必須チェック、数値整形
+        $seen = [];
+        $duplicates = [];
+        foreach ($data as $i => $row) {
+            $key = strtolower(trim((string)($row['key'] ?? '')));
+            $label = trim((string)($row['label'] ?? ''));
+            $length = (string)((float)($row['length_cm'] ?? 0));
+            $width  = (string)((float)($row['width_cm'] ?? 0));
+            $height = (string)((float)($row['height_cm'] ?? 0));
+            $comment = trim((string)($row['comment'] ?? ''));
+            $sort = (string)((int)($row['sort'] ?? 0));
+
+            $data[$i] = [
+                'key' => $key,
+                'label' => $label,
+                'length_cm' => $length,
+                'width_cm' => $width,
+                'height_cm' => $height,
+                'comment' => $comment,
+                'sort' => $sort,
+            ];
+
+            if ($key === '' || $label === '') {
+                $response['error'] = 'key と label は必須です';
+                http_response_code(400);
+                echo json_encode($response, JSON_UNESCAPED_UNICODE);
+                exit;
+            }
+            if ((float)$length <= 0 || (float)$width <= 0 || (float)$height <= 0) {
+                $response['error'] = 'length_cm / width_cm / height_cm は0より大きい数値を指定してください';
+                http_response_code(400);
+                echo json_encode($response, JSON_UNESCAPED_UNICODE);
+                exit;
+            }
+
+            if (isset($seen[$key])) $duplicates[$key] = true;
+            $seen[$key] = true;
+        }
+
+        if (!empty($duplicates)) {
+            $response['error'] = 'key が同じデータが存在します: ' . implode(', ', array_keys($duplicates));
+            http_response_code(400);
+            echo json_encode($response, JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        if (writeCSV(CSV_BOXES, $data, $headers)) {
+            $response['success'] = true;
+            $response['message'] = '箱サイズ設定を保存しました';
+        } else {
+            $response['error'] = 'ファイルの書き込みに失敗しました';
+            http_response_code(500);
+        }
+        break;
         
     default:
         $response['error'] = 'Invalid type parameter';

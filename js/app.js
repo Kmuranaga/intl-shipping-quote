@@ -31,6 +31,7 @@ let services = [];
 let rates = [];
 let carrierZones = [];
 let settings = {};
+let boxes = [];
 let selectedCountry = null;
 
 // carrier:country_code -> zone
@@ -61,6 +62,7 @@ async function loadAllData() {
         rates = data.rates;
         carrierZones = data.carrier_zones || [];
         settings = data.settings;
+        boxes = data.boxes || [];
 
         // マッピングを高速化
         carrierZoneMap = new Map();
@@ -84,6 +86,113 @@ async function loadAllData() {
         console.error('Failed to load data:', error);
         return false;
     }
+}
+
+// ==========================================
+// 箱サイズガイド
+// ==========================================
+
+function escapeHtml(value) {
+    const s = String(value ?? '');
+    return s
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+}
+
+function clamp(n, min, max) {
+    return Math.min(max, Math.max(min, n));
+}
+
+function getMaxDim(box) {
+    const l = Number(box?.length_cm) || 0;
+    const w = Number(box?.width_cm) || 0;
+    const h = Number(box?.height_cm) || 0;
+    return Math.max(l, w, h);
+}
+
+function getNumberSetting(key, fallback) {
+    const raw = settings ? settings[key] : undefined;
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : fallback;
+}
+
+function getBoxGuideConfig() {
+    // 物理サイズ(cm) → 表示サイズ(px) 変換設定
+    const refCm = clamp(getNumberSetting('boxGuideRefCm', 60), 1, 100000);
+    const refPx = clamp(getNumberSetting('boxGuideRefPx', 90), 1, 100000);
+    const minPx = clamp(getNumberSetting('boxGuideMinPx', 50), 1, 100000);
+    const maxPx = clamp(getNumberSetting('boxGuideMaxPx', 110), 1, 100000);
+    const scalePct = clamp(getNumberSetting('boxGuideScalePct', 100), 50, 200);
+
+    const minCube = Math.min(minPx, maxPx);
+    const maxCube = Math.max(minPx, maxPx);
+
+    return {
+        refCm,
+        refPx,
+        minCube,
+        maxCube,
+        scale: scalePct / 100
+    };
+}
+
+function renderBoxSizeGuide() {
+    const container = document.getElementById('boxSizeGuide');
+    if (!container) return;
+
+    const rows = (boxes || [])
+        .map(b => ({
+            key: String(b?.key ?? '').trim().toLowerCase(),
+            label: String(b?.label ?? '').trim(),
+            length_cm: Number(b?.length_cm) || 0,
+            width_cm: Number(b?.width_cm) || 0,
+            height_cm: Number(b?.height_cm) || 0,
+            comment: String(b?.comment ?? '').trim(),
+            sort: Number.isFinite(Number(b?.sort)) ? parseInt(b.sort, 10) : 0
+        }))
+        .filter(b => b.key && b.label && b.length_cm > 0 && b.width_cm > 0 && b.height_cm > 0)
+        .sort((a, b) => (a.sort - b.sort) || a.key.localeCompare(b.key));
+
+    // 5件以上は左寄せ（それ未満は中央寄せ）
+    container.classList.toggle('align-left', rows.length >= 5);
+
+    if (rows.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding: 1.5rem; color: var(--text-light); font-size: 0.9rem;">箱サイズが未設定です（管理画面で設定してください）</div>';
+        return;
+    }
+
+    const cfg = getBoxGuideConfig();
+
+    container.innerHTML = rows.map(b => {
+        const dimCm = getMaxDim(b);
+        const baseCube = (dimCm / cfg.refCm) * cfg.refPx;
+        const cube = Math.round(clamp(baseCube * cfg.scale, cfg.minCube, cfg.maxCube));
+        const tape = clamp(Math.round(cube * 0.22), 10, 22);
+        const dims = `${b.length_cm}×${b.width_cm}×${b.height_cm} cm`;
+
+        return `
+            <div class="size-box-item" style="--cube-size: ${cube}px; --tape-size: ${tape}px;">
+                <div class="cube-wrapper" aria-hidden="true">
+                    <div class="cube-box">
+                        <div class="cube-face cube-front">
+                            <div class="tape-front-v"></div>
+                        </div>
+                        <div class="cube-face cube-top">
+                            <div class="tape-top-v"></div>
+                            <div class="tape-top-h"></div>
+                        </div>
+                        <div class="cube-face cube-right"></div>
+                    </div>
+                </div>
+                <span class="size-label">${escapeHtml(b.label)}</span>
+                <span class="size-dimensions">${escapeHtml(dims)}</span>
+                ${b.comment ? `<span class="size-comment">${escapeHtml(b.comment)}</span>` : ''}
+            </div>
+        `;
+    }).join('');
 }
 
 // ==========================================
@@ -395,6 +504,9 @@ async function init() {
     if (success) {
         // 設定適用
         applySettings();
+
+        // 箱サイズガイド表示
+        renderBoxSizeGuide();
         
         // イベントリスナー設定
         document.getElementById('calculateBtn').addEventListener('click', calculate);

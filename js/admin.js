@@ -55,6 +55,7 @@ let editData = {
     services: [],
     countries: [],
     carrier_zones: [],
+    boxes: [],
     settings: {}
 };
 
@@ -174,11 +175,12 @@ function showAdminPanel() {
 
 async function loadAllAdminData() {
     try {
-        const [ratesRes, servicesRes, countriesRes, carrierZonesRes, settingsRes] = await Promise.all([
+        const [ratesRes, servicesRes, countriesRes, carrierZonesRes, boxesRes, settingsRes] = await Promise.all([
             AdminAPI.getData('rates'),
             AdminAPI.getData('services'),
             AdminAPI.getData('countries'),
             AdminAPI.getData('carrier_zones'),
+            AdminAPI.getData('boxes'),
             AdminAPI.getData('settings')
         ]);
         
@@ -186,6 +188,7 @@ async function loadAllAdminData() {
         if (servicesRes.success) editData.services = servicesRes.data;
         if (countriesRes.success) editData.countries = countriesRes.data;
         if (carrierZonesRes.success) editData.carrier_zones = carrierZonesRes.data;
+        if (boxesRes.success) editData.boxes = boxesRes.data;
         if (settingsRes.success) editData.settings = settingsRes.data;
 
         // services は carrier 必須（小文字正規化のみ）
@@ -245,10 +248,184 @@ function renderCurrentTab() {
         case 'carrier_zones':
             renderCarrierZonesTable();
             break;
+        case 'boxes':
+            renderBoxesTable();
+            break;
         case 'settings':
             renderSettings();
             break;
     }
+}
+
+// ==========================================
+// 箱サイズ管理
+// ==========================================
+
+function normalizeBoxKey(value) {
+    return String(value ?? '').trim().toLowerCase();
+}
+
+function toNumberOr(value, fallback) {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : fallback;
+}
+
+function normalizeBoxRow(box) {
+    const b = box || {};
+    return {
+        key: normalizeBoxKey(b.key),
+        label: String(b.label ?? '').trim(),
+        length_cm: toNumberOr(b.length_cm, 0),
+        width_cm: toNumberOr(b.width_cm, 0),
+        height_cm: toNumberOr(b.height_cm, 0),
+        comment: String(b.comment ?? '').trim(),
+        sort: parseInt(b.sort ?? 0, 10) || 0
+    };
+}
+
+function validateBoxesClient(rows) {
+    const seen = new Set();
+    const dup = new Set();
+    for (const r of rows || []) {
+        const key = normalizeBoxKey(r?.key);
+        const label = String(r?.label ?? '').trim();
+        if (!key || !label) return { ok: false, error: 'キーと表示名は必須です' };
+        if (seen.has(key)) dup.add(key);
+        seen.add(key);
+        const l = toNumberOr(r?.length_cm, 0);
+        const w = toNumberOr(r?.width_cm, 0);
+        const h = toNumberOr(r?.height_cm, 0);
+        if (!(l > 0 && w > 0 && h > 0)) return { ok: false, error: '縦/横/高は0より大きい数値を指定してください' };
+    }
+    if (dup.size) return { ok: false, error: `キーが重複しています: ${Array.from(dup).join(', ')}` };
+    return { ok: true, error: null };
+}
+
+function renderBoxesTable() {
+    const tbody = document.getElementById('boxesTableBody');
+    const countEl = document.getElementById('boxesCount');
+    if (!tbody || !countEl) return;
+
+    const rows = (editData.boxes || [])
+        .map(normalizeBoxRow)
+        .sort((a, b) => (a.sort - b.sort) || a.key.localeCompare(b.key));
+
+    editData.boxes = rows;
+
+    if (rows.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 2rem;">データがありません</td></tr>';
+        countEl.textContent = '0件';
+        return;
+    }
+
+    tbody.innerHTML = rows.map((b, index) => `
+        <tr>
+            <td>${escapeHtml(b.key)}</td>
+            <td>${escapeHtml(b.label)}</td>
+            <td>${b.length_cm}</td>
+            <td>${b.width_cm}</td>
+            <td>${b.height_cm}</td>
+            <td style="max-width: 260px;">${escapeHtml(b.comment)}</td>
+            <td>${b.sort}</td>
+            <td>
+                <button class="btn-icon btn-edit" onclick="editBox(${index})" title="編集">✏️</button>
+                <button class="btn-icon btn-delete" onclick="deleteBox(${index})" title="削除">🗑️</button>
+            </td>
+        </tr>
+    `).join('');
+
+    countEl.textContent = `${rows.length}件`;
+}
+
+function escapeHtml(value) {
+    const s = String(value ?? '');
+    return s
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+}
+
+async function addBox() {
+    const key = prompt('キー（例: s / m / l）:');
+    if (key === null) return;
+    const label = prompt('表示名（例: Sサイズ）:');
+    if (label === null) return;
+    const length_cm = prompt('縦(cm):', '25');
+    if (length_cm === null) return;
+    const width_cm = prompt('横(cm):', '20');
+    if (width_cm === null) return;
+    const height_cm = prompt('高(cm):', '15');
+    if (height_cm === null) return;
+    const comment = prompt('コメント:', '');
+    if (comment === null) return;
+    const sort = prompt('並び順（小→大の順に）:', String((editData.boxes?.length || 0) * 10 + 10));
+    if (sort === null) return;
+
+    editData.boxes = editData.boxes || [];
+    editData.boxes.push(normalizeBoxRow({ key, label, length_cm, width_cm, height_cm, comment, sort }));
+
+    const v = validateBoxesClient(editData.boxes);
+    if (!v.ok) {
+        showToast(v.error || 'バリデーションエラー', 'error');
+        // 追加分を取り消す
+        editData.boxes.pop();
+        renderBoxesTable();
+        return;
+    }
+
+    renderBoxesTable();
+    await saveDataWithMessage('boxes', editData.boxes, '追加しました');
+}
+
+async function editBox(index) {
+    const b = (editData.boxes || [])[index];
+    if (!b) return;
+
+    const key = prompt('キー:', b.key);
+    if (key === null) return;
+    const label = prompt('表示名:', b.label);
+    if (label === null) return;
+    const length_cm = prompt('縦(cm):', String(b.length_cm));
+    if (length_cm === null) return;
+    const width_cm = prompt('横(cm):', String(b.width_cm));
+    if (width_cm === null) return;
+    const height_cm = prompt('高(cm):', String(b.height_cm));
+    if (height_cm === null) return;
+    const comment = prompt('コメント:', b.comment || '');
+    if (comment === null) return;
+    const sort = prompt('並び順:', String(b.sort ?? 0));
+    if (sort === null) return;
+
+    const next = normalizeBoxRow({ key, label, length_cm, width_cm, height_cm, comment, sort });
+    const nextRows = (editData.boxes || []).map((x, i) => (i === index ? next : normalizeBoxRow(x)));
+    const v = validateBoxesClient(nextRows);
+    if (!v.ok) {
+        showToast(v.error || 'バリデーションエラー', 'error');
+        return;
+    }
+
+    editData.boxes = nextRows;
+    renderBoxesTable();
+    await saveDataWithMessage('boxes', editData.boxes, '変更しました');
+}
+
+async function deleteBox(index) {
+    if (!confirm('この箱サイズを削除しますか？')) return;
+    (editData.boxes || []).splice(index, 1);
+    renderBoxesTable();
+    await saveDataWithMessage('boxes', editData.boxes, '削除しました');
+}
+
+async function saveBoxes() {
+    editData.boxes = (editData.boxes || []).map(normalizeBoxRow);
+    const v = validateBoxesClient(editData.boxes);
+    if (!v.ok) {
+        showToast(v.error || 'バリデーションエラー', 'error');
+        return;
+    }
+    await saveDataWithMessage('boxes', editData.boxes, '箱サイズを保存しました');
 }
 
 // ==========================================
@@ -859,6 +1036,13 @@ function renderSettings() {
     document.getElementById('settingSubtitle').value = editData.settings.subtitle || '';
     document.getElementById('settingNotes').value = (editData.settings.notes || '').replace(/\|/g, '\n');
     document.getElementById('settingFooter').value = editData.settings.footer || '';
+
+    // 箱ガイド表示設定（物理→表示）
+    document.getElementById('settingBoxGuideRefCm').value = editData.settings.boxGuideRefCm ?? '60';
+    document.getElementById('settingBoxGuideRefPx').value = editData.settings.boxGuideRefPx ?? '90';
+    document.getElementById('settingBoxGuideMinPx').value = editData.settings.boxGuideMinPx ?? '50';
+    document.getElementById('settingBoxGuideMaxPx').value = editData.settings.boxGuideMaxPx ?? '110';
+    document.getElementById('settingBoxGuideScalePct').value = editData.settings.boxGuideScalePct ?? '100';
 }
 
 async function saveSettings() {
@@ -866,7 +1050,14 @@ async function saveSettings() {
         title: document.getElementById('settingTitle').value,
         subtitle: document.getElementById('settingSubtitle').value,
         notes: document.getElementById('settingNotes').value.replace(/\n/g, '|'),
-        footer: document.getElementById('settingFooter').value
+        footer: document.getElementById('settingFooter').value,
+
+        // 箱ガイド表示設定（物理→表示）
+        boxGuideRefCm: document.getElementById('settingBoxGuideRefCm').value,
+        boxGuideRefPx: document.getElementById('settingBoxGuideRefPx').value,
+        boxGuideMinPx: document.getElementById('settingBoxGuideMinPx').value,
+        boxGuideMaxPx: document.getElementById('settingBoxGuideMaxPx').value,
+        boxGuideScalePct: document.getElementById('settingBoxGuideScalePct').value
     };
     
     try {
@@ -979,6 +1170,10 @@ function downloadTemplate(type) {
             content = 'carrier,country_code,zone\nfedex,US,E\ndhl,US,5';
             filename = 'carrier_zones_template.csv';
             break;
+        case 'boxes':
+            content = 'key,label,length_cm,width_cm,height_cm,comment,sort\ns,Sサイズ,25,20,15,書籍・小物に最適,10\nm,Mサイズ,40,30,25,衣類・雑貨向け,20\nl,Lサイズ,60,45,35,家電・大型商品に,30';
+            filename = 'boxes_template.csv';
+            break;
     }
     
     // BOM付きUTF-8
@@ -1026,6 +1221,13 @@ function downloadCurrentData(type) {
                 `${z.carrier},${z.country_code},${z.zone}`
             ).join('\n');
             filename = 'carrier_zones_backup.csv';
+            break;
+        case 'boxes':
+            content = 'key,label,length_cm,width_cm,height_cm,comment,sort\n';
+            content += (editData.boxes || []).map(b =>
+                `${b.key},${b.label},${b.length_cm},${b.width_cm},${b.height_cm},${String(b.comment || '').replace(/\n/g, ' ')},${b.sort}`
+            ).join('\n');
+            filename = 'boxes_backup.csv';
             break;
     }
     

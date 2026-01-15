@@ -1,7 +1,7 @@
 <?php
 /**
  * データ取得API
- * GET /api/data.php?type=rates|services|countries|settings
+ * GET /api/data.php?type=rates|services|countries|carrier_zones|settings|boxes|all
  */
 
 require_once __DIR__ . '/../config.php';
@@ -111,6 +111,22 @@ switch ($type) {
         $response['success'] = true;
         $response['data'] = $settings;
         break;
+
+    case 'boxes':
+        $data = readCSV(CSV_BOXES);
+        $response['success'] = true;
+        $response['data'] = array_map(function($row) {
+            return [
+                'key' => (string)($row['key'] ?? ''),
+                'label' => (string)($row['label'] ?? ''),
+                'length_cm' => (float)($row['length_cm'] ?? 0),
+                'width_cm' => (float)($row['width_cm'] ?? 0),
+                'height_cm' => (float)($row['height_cm'] ?? 0),
+                'comment' => (string)($row['comment'] ?? ''),
+                'sort' => (int)($row['sort'] ?? 0),
+            ];
+        }, $data);
+        break;
         
     case 'all':
         $response['success'] = true;
@@ -144,7 +160,18 @@ switch ($type) {
                     $settings[$row['key']] = $row['value'];
                 }
                 return $settings;
-            })()
+            })(),
+            'boxes' => array_map(function($row) {
+                return [
+                    'key' => (string)($row['key'] ?? ''),
+                    'label' => (string)($row['label'] ?? ''),
+                    'length_cm' => (float)($row['length_cm'] ?? 0),
+                    'width_cm' => (float)($row['width_cm'] ?? 0),
+                    'height_cm' => (float)($row['height_cm'] ?? 0),
+                    'comment' => (string)($row['comment'] ?? ''),
+                    'sort' => (int)($row['sort'] ?? 0),
+                ];
+            }, readCSV(CSV_BOXES))
         ];
         break;
         
