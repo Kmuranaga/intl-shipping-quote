@@ -36,8 +36,17 @@ let selectedCountry = null;
 // carrier:country_code -> zone
 let carrierZoneMap = new Map();
 
-// Toastの自動消去タイマー
-let toastTimerId = null;
+// ==========================================
+// 通知（Toastは使わない）
+// ==========================================
+
+function notify(message, level = 'info') {
+    // 画面通知（Toast）は一切出さない。必要なら console にだけ残す。
+    if (!message) return;
+    if (level === 'error') console.error(message);
+    else if (level === 'warn') console.warn(message);
+    else console.log(message);
+}
 
 // ==========================================
 // データ読み込み
@@ -216,7 +225,7 @@ function isServiceAvailableForCountry(service, country) {
 
 function calculate() {
     if (!selectedCountry) {
-        showToast('仕向国を選択してください', 'error');
+        notify('仕向国を選択してください', 'warn');
         return;
     }
 
@@ -226,7 +235,7 @@ function calculate() {
     const height = parseFloat(document.getElementById('heightInput').value) || 0;
 
     if (weight <= 0) {
-        showToast('重量を入力してください', 'error');
+        notify('重量を入力してください', 'warn');
         return;
     }
 
@@ -256,7 +265,8 @@ function calculate() {
         const msgParts = [];
         if (uniqueMissingCarrier.length) msgParts.push(`carrier未設定のサービス: ${uniqueMissingCarrier.join(', ')}`);
         if (uniqueMissingZone.length) msgParts.push(`carrier_zones未設定: ${uniqueMissingZone.join(', ')}`);
-        showToast(msgParts.join(' / '), 'error');
+        // UIの結果カード側で「未設定」を表示しているため、ここでは画面通知はしない
+        notify(msgParts.join(' / '), 'warn');
     }
 
     const items = services.map((service, idx) => {
@@ -364,44 +374,6 @@ function calculate() {
 function getCarrierClass(service) {
     // CSSクラスは carrier と同じキーを期待
     return getCarrierKeyFromService(service) || '';
-}
-
-// ==========================================
-// Toast通知
-// ==========================================
-
-function showToast(message, type = '') {
-    const toast = document.getElementById('toast');
-    // 既存タイマーを解除
-    if (toastTimerId) {
-        clearTimeout(toastTimerId);
-        toastTimerId = null;
-    }
-
-    // XSS回避のため textContent で表示
-    toast.textContent = message;
-    toast.className = 'toast';
-    if (type) toast.classList.add(type);
-    if (type === 'error') toast.classList.add('sticky');
-    toast.classList.add('visible');
-
-    // 閉じるボタン（クリックで消せる）
-    const closeBtn = document.createElement('button');
-    closeBtn.type = 'button';
-    closeBtn.className = 'toast-close';
-    closeBtn.textContent = '×';
-    closeBtn.addEventListener('click', () => {
-        toast.classList.remove('visible');
-    });
-    toast.appendChild(closeBtn);
-
-    // エラー以外は自動で消す
-    if (type !== 'error') {
-        toastTimerId = setTimeout(() => {
-            toast.classList.remove('visible');
-            toastTimerId = null;
-        }, 3000);
-    }
 }
 
 // ==========================================
