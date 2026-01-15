@@ -219,7 +219,7 @@
         /* サービスリスト */
         .service-item {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             justify-content: space-between;
             padding: 1rem;
             background: var(--bg);
@@ -227,7 +227,7 @@
             margin-bottom: 0.75rem;
         }
 
-        .service-item-info { display: flex; align-items: center; gap: 1rem; }
+        .service-item-info { display: flex; align-items: flex-start; gap: 1rem; flex: 1; min-width: 0; }
         .service-color { width: 16px; height: 16px; border-radius: 4px; }
         .service-item-actions { display: flex; gap: 0.5rem; }
 
@@ -346,6 +346,10 @@
             border-radius: 4px;
             font-size: 0.75rem;
             color: var(--text-light);
+            max-width: 100%;
+            white-space: normal;
+            overflow-wrap: anywhere;
+            word-break: break-word;
         }
 
         @media (max-width: 768px) {

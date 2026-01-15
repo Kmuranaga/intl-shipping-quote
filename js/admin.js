@@ -440,7 +440,7 @@ function renderServicesList() {
                 <div>
                     <strong>
                         ${service.name}
-                        ${service.country_codes ? `<span class="badge">適用国: ${service.country_codes}</span>` : ''}
+                        ${service.country_codes ? `<span class="badge">適用国: ${String(service.country_codes).replace(/\s*,\s*/g, ', ').trim()}</span>` : ''}
                         ${service.use_actual_weight ? `<span class="badge">実重量計算</span>` : ''}
                     </strong>
                     <div style="font-size: 0.8rem; color: var(--text-light);">${service.description}</div>
